@@ -1,0 +1,3941 @@
+{
+  "timestamp_utc": "2026-11-03T16:37:15.904557+00:00",
+  "source": "https://api.osv.dev/v1/querybatch",
+  "package_count": 61,
+  "query_status": "complete",
+  "matches": [
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "GHSA-5h93-6whr-6q8j",
+      "advisory": {
+        "id": "GHSA-5h93-6whr-6q8j",
+        "summary": "Model Context Protocol Python SDK: HTTP client transports followed cross-origin redirects carrying custom headers and bodies",
+        "details": "### Summary\nIn affected versions, the SDK's Streamable HTTP and SSE client transports followed HTTP redirects to any host. If the configured MCP endpoint answered with a redirect to a different origin:\n\n- custom headers set on the client (for example an `X-API-Key` credential) were sent to that origin, and\n- on a `307` or `308` redirect the request body was re-sent there too.\n\nThe SDK's OAuth client providers followed redirects on their own discovery, registration and token requests in the same way.\n\nA lone `Authorization` bearer header was not exposed; the HTTP library already drops it on cross-origin redirects.\n\nAnyone able to make an endpoint you trust redirect elsewhere (a stale redirect to a lapsed domain, a misrouted proxy rule, redirect logic an attacker can influence) could capture that material. A server that is itself malicious gains nothing this way; it already receives your requests directly.\n\n### Am I affected?\nYes, if your code uses the SDK as an MCP client over HTTP through any of:\n\n- `streamable_http_client` (on 2.x also `Client` given an `http://` or `https://` URL)\n- `streamablehttp_client` or `sse_client`\n- `ClientSessionGroup` with HTTP server parameters\n- the internal `create_mcp_http_client` helper\n\nThis includes an HTTP client you passed in yourself with `follow_redirects=True`.\n\nAffected versions: 1.8.0 through 1.29.1, and 2.0.0 through 2.1.1.\n\nNot affected:\n\n- MCP servers\n- stdio clients\n- a client you supplied with `follow_redirects` left at its default of `False`\n\n### Fix\nUpgrade to `mcp` 1.30.0 (1.x) or 2.2.0 (2.x) or later; no code changes are needed.\n\nThe transports, and the OAuth providers' own requests, now follow a redirect only when it stays on the endpoint's origin (same scheme, host and port, or an `http` to `https` upgrade on the same host) and keeps the request method. Any other redirect is not followed and the request fails with an error naming the target (`MCPError` on 2.x, `httpx.HTTPStatusError` on 1.x), whichever HTTP client the transport uses. The internal `create_mcp_http_client` helper no longer turns redirect following on, so code calling it directly now receives the redirect response instead.\n\nIf your client currently reaches its server through a redirect to another host, including a server that needs no credentials, it will stop connecting after the upgrade: set the endpoint URL to the redirect's target.\n\nUntil you can upgrade, supply your own HTTP client with `follow_redirects` left at `False` (`http_client=` on `streamable_http_client`; `httpx_client_factory=` on `sse_client` and `streamablehttp_client`; `ClientSessionGroup` has no such parameter). If a client may already have followed a redirect to a host you do not control, rotate the credentials it carried.\n\n<details>\n<summary>If you genuinely need the old behaviour (unsupported)</summary>\n\nThis restores what this advisory fixes: redirects to any host are followed again, carrying your custom headers and, on `307`/`308`, the request body, OAuth token requests included. Prefer setting the endpoint URL to the redirect's target. If you cannot, and you accept forwarding credentials to the redirect target, give the transport an HTTP client that follows redirects regardless of what the SDK asks for:\n\n```python\nimport httpx2  # on 1.x: import httpx and subclass httpx.AsyncClient instead\n\nclass FollowRedirectsAnyway(httpx2.AsyncClient):\n    \"\"\"Follows redirects to ANY origin. Deliberately gives up the SDK's same-origin protection.\"\"\"\n\n    async def send(self, request, *, follow_redirects=False, **kwargs):\n        return await super().send(request, follow_redirects=True, **kwargs)\n\nhttp_client = FollowRedirectsAnyway(timeout=httpx2.Timeout(30, read=300))\n# streamable_http_client(url, http_client=http_client)\n\n# sse_client / streamablehttp_client take a factory instead:\ndef client_factory(headers=None, timeout=None, auth=None):\n    return FollowRedirectsAnyway(headers=headers, auth=auth,\n                                 timeout=timeout if timeout is not None else httpx2.Timeout(30, read=300))\n# sse_client(url, httpx_client_factory=client_factory)\n```\n\nThe redirect handling is then the HTTP library's own, as before the fix: a lone `Authorization` header is still dropped on cross-origin hops and `301`/`302`/`303` become `GET`. It is not something the SDK supports or tests.\n\n</details>\n\n---",
+        "aliases": [
+          "CVE-2026-116685"
+        ],
+        "modified": "2026-10-27T21:15:03.819223133Z",
+        "published": "2026-10-27T21:05:34Z",
+        "database_specific": {
+          "github_reviewed_at": "2026-10-27T21:05:34Z",
+          "nvd_published_at": null,
+          "cwe_ids": [
+            "CWE-200"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-5h93-6whr-6q8j"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3397"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3448"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/2106335745563b2321b8c73fef2c12903d00aa6e"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/c6762e821c527925f0b617db216d00fbd1d0bf99"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.2.0"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.0.0"
+                  },
+                  {
+                    "fixed": "2.2.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "2.0.0",
+              "2.0.1",
+              "2.1.0",
+              "2.1.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-5h93-6whr-6q8j/GHSA-5h93-6whr-6q8j.json"
+            }
+          },
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.8.0"
+                  },
+                  {
+                    "fixed": "1.30.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.28.1",
+              "1.29.0",
+              "1.29.1",
+              "1.8.0",
+              "1.8.1",
+              "1.9.0",
+              "1.9.1",
+              "1.9.2",
+              "1.9.3",
+              "1.9.4"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-5h93-6whr-6q8j/GHSA-5h93-6whr-6q8j.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.2",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "GHSA-84m7-p3x7-pcfv",
+      "advisory": {
+        "id": "GHSA-84m7-p3x7-pcfv",
+        "summary": "MCP Python SDK: Unbounded Session Accumulation in StreamableHTTP Transport Enables Resource Exhaustion",
+        "details": "### Summary\nIn affected versions, a Streamable HTTP server in stateful mode (the default) never reclaimed session state:\n\n- sessions did not expire;\n- a client `DELETE` ended the session but left its entry registered;\n- a session whose first request was refused stayed registered with a running task.\n\nEach session also kept its parsed `initialize` parameters, and the number of sessions was unlimited. A client that could reach the endpoint could grow server memory without bound using ordinary short requests; only a restart reclaimed it.\n\n### Am I affected?\nYes, if you serve MCP over Streamable HTTP in stateful mode and clients you do not fully trust can reach the endpoint. Stateful mode is the default for:\n\n- `FastMCP` (1.x)\n- `MCPServer` and `Server.streamable_http_app()` (2.x)\n- `StreamableHTTPSessionManager`\n\nAffected versions: 1.8.0 through 1.29.1, and 2.0.0 through 2.1.1.\n\nNot affected:\n\n- servers on 1.12.0 or later passing `stateless_http=True` (no sessions are kept)\n- servers using only the stdio or SSE transports\n\nAuthentication limits who can open sessions, not how many a token holder can open.\n\n### Fix\nUpgrade to `mcp` 1.30.0 (1.x) or 2.2.0 (2.x) or later. In those versions:\n\n- a session with no request in flight for `session_idle_timeout` seconds (default 1800) is closed and its ID then answers `404`; open streams and in-progress requests keep it alive;\n- at most `max_sessions` sessions exist at once (default 10000); a request that would open another is answered `503`;\n- a session is discarded as soon as it ends, whether by `DELETE`, expiry, or a refused opening request.\n\nBoth settings are keyword arguments on `FastMCP(...)` (1.x), `MCPServer.run()` / `streamable_http_app()` (2.x) and `StreamableHTTPSessionManager`; `None` disables them.\n\nThis bounds retention rather than eliminating it: a live session still holds its `initialize` parameters (up to roughly twice the 4 MiB body limit), and an `initialize` with invalid parameters still opens a session that expires like any other. On a small host, lower `session_idle_timeout`, `max_sessions` and `max_request_body_size` to fit.\n\nIf you cannot upgrade yet, pass `stateless_http=True` (1.12.0 or later) where you need no per-session state, or restrict who can reach the endpoint.",
+        "aliases": [
+          "CVE-2026-59951"
+        ],
+        "modified": "2026-10-15T20:30:08.565001293Z",
+        "published": "2026-10-15T20:13:13Z",
+        "database_specific": {
+          "nvd_published_at": "2026-10-14T17:18:29Z",
+          "cwe_ids": [
+            "CWE-400",
+            "CWE-770",
+            "CWE-772"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-10-15T20:13:13Z"
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-84m7-p3x7-pcfv"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59951"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3395"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3426"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/92120b4b0f50385af096592d7cee932fc1d994e7"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/d2290ca3434731b68ea3e2270bc06a6e6575931b"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.2.0"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.8.0"
+                  },
+                  {
+                    "fixed": "1.30.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.28.1",
+              "1.29.0",
+              "1.29.1",
+              "1.8.0",
+              "1.8.1",
+              "1.9.0",
+              "1.9.1",
+              "1.9.2",
+              "1.9.3",
+              "1.9.4"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-84m7-p3x7-pcfv/GHSA-84m7-p3x7-pcfv.json"
+            }
+          },
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.0.0"
+                  },
+                  {
+                    "fixed": "2.2.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "2.0.0",
+              "2.0.1",
+              "2.1.0",
+              "2.1.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-84m7-p3x7-pcfv/GHSA-84m7-p3x7-pcfv.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "GHSA-rwrf-2pqf-9j8j",
+      "advisory": {
+        "id": "GHSA-rwrf-2pqf-9j8j",
+        "summary": "Model Context Protocol Python SDK: Client fetched server-chosen $ref URLs while validating tool results against output schemas",
+        "details": "### Summary\nIn affected versions, when a connected MCP server declared an `outputSchema` for a tool, the SDK's client validated each `call_tool` result with `jsonschema`'s default resolver, which fetches any `$ref` it cannot resolve locally by opening the URL. A server could therefore put an `http://`, `https://` or `file://` reference in a tool's output schema and make the client:\n\n- request that URL, or read that local file, from the client's own network position on every call of the tool (the content was used only as a schema and never sent back to the server), and\n- stall: the fetch ran synchronously on the event loop with no timeout, so a target that accepted the connection and then went quiet froze every session in the process for as long as it held the connection.\n\n### Am I affected?\nYes, if your application uses the SDK as an MCP client (`ClientSession` over any transport, `ClientSessionGroup`, or the 2.x `Client`) and calls tools on servers you do not fully control. There was no setting that turned the validation off.\n\nAffected versions: 1.10.0 through 1.29.1, and 2.0.0 through 2.1.1.\n\nNot affected: applications that only build servers. If nothing in your code uses `ClientSession`, `ClientSessionGroup` or the 2.x `Client` class, you are not affected.\n\n### Fix\nUpgrade to `mcp` 1.30.0 (1.x) or 2.2.0 (2.x) or later. The client now resolves references only within the schema document the server sent (plus the standard JSON Schema metaschemas), so result validation performs no network or file access. A tool whose output schema points outside its own document fails at call time with `RuntimeError` (`Invalid schema for tool ...`); in-document references such as `#/$defs/...` work as before.\n\nUntil you can upgrade, call tools only on servers you trust. As a partial stopgap, skip tools whose `outputSchema` contains an `$id`, or a `$ref` / `$dynamicRef` that does not start with `#`.",
+        "aliases": [
+          "CVE-2026-116686"
+        ],
+        "modified": "2026-10-27T21:15:03.830660129Z",
+        "published": "2026-10-27T21:05:29Z",
+        "database_specific": {
+          "cwe_ids": [
+            "CWE-918"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-10-27T21:05:29Z",
+          "nvd_published_at": null
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-rwrf-2pqf-9j8j"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3394"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3396"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/5ebdfed4060d8e5b11b8e2348f86bad4d1fb8836"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/6705402e246dc4eb1fcdf4d9902b78d3c9c36e1b"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.2.0"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.0.0"
+                  },
+                  {
+                    "fixed": "2.2.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "2.0.0",
+              "2.0.1",
+              "2.1.0",
+              "2.1.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-rwrf-2pqf-9j8j/GHSA-rwrf-2pqf-9j8j.json"
+            }
+          },
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.10.0"
+                  },
+                  {
+                    "fixed": "1.30.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.28.1",
+              "1.29.0",
+              "1.29.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-rwrf-2pqf-9j8j/GHSA-rwrf-2pqf-9j8j.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.2",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "GHSA-vj7q-gjh5-988w",
+      "advisory": {
+        "id": "GHSA-vj7q-gjh5-988w",
+        "summary": "MCP Python SDK: WebSocket server transport does not support Host/Origin validation",
+        "details": "### Summary\nIn affected versions, the deprecated WebSocket server transport (`mcp.server.websocket.websocket_server`) accepted the WebSocket handshake without applying any `Host` or `Origin` header validation. The `TransportSecuritySettings` mechanism that the SSE and Streamable HTTP transports use for this purpose was not wired into the WebSocket transport, so there was no SDK-level way to restrict which origins could connect.\n\n### Am I affected?\nOnly if a developer's application server exposes `mcp.server.websocket.websocket_server`. This transport has never been part of the MCP specification, is marked deprecated, and is not reachable through `FastMCP` \u2014 a developer must have wired it into an ASGI application themselves. Servers using stdio, SSE, or Streamable HTTP are not affected by this advisory.\n\n### Details\n`websocket_server()` constructed a Starlette `WebSocket` and called `accept(subprotocol=\"mcp\")` immediately, with no inspection of the connection's headers. By contrast, `SseServerTransport` and `StreamableHTTPServerTransport` accept an optional `security_settings: TransportSecuritySettings` and run `TransportSecurityMiddleware.validate_request()` against the incoming `Host` and `Origin` headers before establishing a session. Because browsers attach an `Origin` header to cross-origin WebSocket upgrade requests but do not enforce a same-origin policy on the response, a web page served from any origin could open a WebSocket to a reachable MCP server on this transport, complete the `initialize` handshake, and issue JSON-RPC requests on the resulting session.\n\n### Impact\nA user who runs an MCP server on this transport bound to localhost or a LAN address, without a separate authentication or origin gate in front of it, and visits a malicious web page, can have that page enumerate and invoke the server's tools and read its resources. The consequences depend entirely on what the server exposes. The transport itself requires no token or prior session. Some browsers prompt before allowing a public page to open a connection to a local-network address, which adds a user-interaction step but is not a substitute for server-side validation.\n\n### Mitigation\nUpgrade to version 1.28.1 or later, in which `websocket_server()` accepts the same optional `security_settings: TransportSecuritySettings` argument as the other HTTP-based transports and validates the `Host` and `Origin` headers before accepting the handshake; a request that fails validation is rejected with HTTP 403 and `ValueError(\"Request validation failed\")` is raised to the caller. As with the other transports the parameter defaults to `None`, which leaves validation disabled, so upgrading alone does not change behaviour: pass a `TransportSecuritySettings` with `enable_dns_rebinding_protection=True` and appropriate `allowed_hosts` / `allowed_origins` to receive the protection. The recommended path remains to migrate off this deprecated transport to Streamable HTTP, where `FastMCP` enables this protection automatically for localhost binds. The WebSocket transport has been removed entirely in v2.",
+        "aliases": [
+          "CVE-2026-59950",
+          "PYSEC-2026-3483"
+        ],
+        "modified": "2026-09-10T03:50:53.083568399Z",
+        "published": "2026-07-16T20:14:34Z",
+        "database_specific": {
+          "github_reviewed_at": "2026-07-16T20:14:34Z",
+          "nvd_published_at": "2026-07-15T21:16:55Z",
+          "cwe_ids": [
+            "CWE-1385",
+            "CWE-346"
+          ],
+          "severity": "HIGH",
+          "github_reviewed": true
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-vj7q-gjh5-988w"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59950"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/2992"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/777b8d06710c140e3606b0d4598e2aa48546c266"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.28.1"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "1.28.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.9.1",
+              "1.0.0",
+              "1.1.0",
+              "1.1.1",
+              "1.1.2",
+              "1.1.3",
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.2.0",
+              "1.2.0rc1",
+              "1.2.1",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.3.0",
+              "1.3.0rc1",
+              "1.4.0",
+              "1.4.1",
+              "1.5.0",
+              "1.6.0",
+              "1.7.0",
+              "1.7.1",
+              "1.8.0",
+              "1.8.1",
+              "1.9.0",
+              "1.9.1",
+              "1.9.2",
+              "1.9.3",
+              "1.9.4"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-vj7q-gjh5-988w/GHSA-vj7q-gjh5-988w.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "GHSA-w4fh-qvv9-3v23",
+      "advisory": {
+        "id": "GHSA-w4fh-qvv9-3v23",
+        "summary": "Model Context Protocol Python SDK: Server bearer-token authentication accepts tokens issued for a different resource server",
+        "details": "### Summary\nIn affected versions, the SDK's server-side bearer authentication had no way to check that a token was issued for your server (its audience). Where one authorization server issues tokens for several services, a valid token for another service was also accepted by your MCP server.\n\n### Am I affected?\nYes, if your HTTP server uses the SDK's bearer authentication (`auth=AuthSettings(...)` with `token_verifier=`), its authorization server also issues tokens for other services, and your `TokenVerifier` does not check the token's audience (`aud`) itself.\n\nAffected versions:\n\n- `mcp` 1.10.0 through 1.29.1\n- `mcp` 2.0.0 through 2.1.1\n\n### Fix\nUpgrade to:\n\n- 1.x: `mcp` 1.30.0 or later\n- 2.x: `mcp` 2.2.0 or later\n\n**Upgrading alone changes nothing.** The patched versions add a `validate_token_resource` setting that is off unless you set it. To turn the check on, make both of these changes together:\n\n1. Set `validate_token_resource=True` in `AuthSettings`, with `resource_server_url` set to the audience your authorization server puts in tokens for your server.\n2. Return the token's audience from `verify_token()` as `AccessToken.resource`.\n\nA token for another service then gets `401`. With only the first change, every request gets `401`.\n\nIf your `TokenVerifier` already checks the audience, set `validate_token_resource=False` to silence the deprecation warning. The setting will default to `True` in 3.0.\n\nIf you cannot upgrade yet, reject any token whose `aud` does not include your server inside `verify_token()`. That closes the issue on every version.",
+        "aliases": [
+          "CVE-2026-116684"
+        ],
+        "modified": "2026-10-27T21:15:03.825987077Z",
+        "published": "2026-10-27T21:06:59Z",
+        "database_specific": {
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-10-27T21:06:59Z",
+          "nvd_published_at": null,
+          "cwe_ids": [
+            "CWE-863"
+          ]
+        },
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-w4fh-qvv9-3v23"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3447"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/3451"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/0c9136841ff092987a20700ff9c2c9789bda2f40"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/8c2fa6eabacde869d75568e33b9d466b58c2f512"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.30.0"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.2.0"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "2.0.0"
+                  },
+                  {
+                    "fixed": "2.2.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "2.0.0",
+              "2.0.1",
+              "2.1.0",
+              "2.1.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-w4fh-qvv9-3v23/GHSA-w4fh-qvv9-3v23.json"
+            }
+          },
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "1.10.0"
+                  },
+                  {
+                    "fixed": "1.30.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.28.1",
+              "1.29.0",
+              "1.29.1"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/10/GHSA-w4fh-qvv9-3v23/GHSA-w4fh-qvv9-3v23.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.2",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "mcp",
+        "version": "1.27.2"
+      },
+      "id": "PYSEC-2026-3483",
+      "advisory": {
+        "id": "PYSEC-2026-3483",
+        "summary": "MCP Python SDK: WebSocket server transport does not support Host/Origin validation",
+        "details": "### Summary\nIn affected versions, the deprecated WebSocket server transport (`mcp.server.websocket.websocket_server`) accepted the WebSocket handshake without applying any `Host` or `Origin` header validation. The `TransportSecuritySettings` mechanism that the SSE and Streamable HTTP transports use for this purpose was not wired into the WebSocket transport, so there was no SDK-level way to restrict which origins could connect.\n\n### Am I affected?\nOnly if a developer's application server exposes `mcp.server.websocket.websocket_server`. This transport has never been part of the MCP specification, is marked deprecated, and is not reachable through `FastMCP` \u2014 a developer must have wired it into an ASGI application themselves. Servers using stdio, SSE, or Streamable HTTP are not affected by this advisory.\n\n### Details\n`websocket_server()` constructed a Starlette `WebSocket` and called `accept(subprotocol=\"mcp\")` immediately, with no inspection of the connection's headers. By contrast, `SseServerTransport` and `StreamableHTTPServerTransport` accept an optional `security_settings: TransportSecuritySettings` and run `TransportSecurityMiddleware.validate_request()` against the incoming `Host` and `Origin` headers before establishing a session. Because browsers attach an `Origin` header to cross-origin WebSocket upgrade requests but do not enforce a same-origin policy on the response, a web page served from any origin could open a WebSocket to a reachable MCP server on this transport, complete the `initialize` handshake, and issue JSON-RPC requests on the resulting session.\n\n### Impact\nA user who runs an MCP server on this transport bound to localhost or a LAN address, without a separate authentication or origin gate in front of it, and visits a malicious web page, can have that page enumerate and invoke the server's tools and read its resources. The consequences depend entirely on what the server exposes. The transport itself requires no token or prior session. Some browsers prompt before allowing a public page to open a connection to a local-network address, which adds a user-interaction step but is not a substitute for server-side validation.\n\n### Mitigation\nUpgrade to version 1.28.1 or later, in which `websocket_server()` accepts the same optional `security_settings: TransportSecuritySettings` argument as the other HTTP-based transports and validates the `Host` and `Origin` headers before accepting the handshake; a request that fails validation is rejected with HTTP 403 and `ValueError(\"Request validation failed\")` is raised to the caller. As with the other transports the parameter defaults to `None`, which leaves validation disabled, so upgrading alone does not change behaviour: pass a `TransportSecuritySettings` with `enable_dns_rebinding_protection=True` and appropriate `allowed_hosts` / `allowed_origins` to receive the protection. The recommended path remains to migrate off this deprecated transport to Streamable HTTP, where `FastMCP` enables this protection automatically for localhost binds. The WebSocket transport has been removed entirely in v2.",
+        "aliases": [
+          "CVE-2026-59950",
+          "GHSA-vj7q-gjh5-988w"
+        ],
+        "modified": "2026-07-23T15:00:13.898863418Z",
+        "published": "2026-07-23T11:41:46.534440Z",
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-vj7q-gjh5-988w"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59950"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/pull/2992"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/commit/777b8d06710c140e3606b0d4598e2aa48546c266"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/modelcontextprotocol/python-sdk"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v1.28.1"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://pypi.org/project/mcp"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-vj7q-gjh5-988w"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "mcp",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/mcp"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "1.28.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.9.1",
+              "1.0.0",
+              "1.1.0",
+              "1.1.1",
+              "1.1.2",
+              "1.1.3",
+              "1.10.0",
+              "1.10.1",
+              "1.11.0",
+              "1.12.0",
+              "1.12.1",
+              "1.12.2",
+              "1.12.3",
+              "1.12.4",
+              "1.13.0",
+              "1.13.1",
+              "1.14.0",
+              "1.14.1",
+              "1.15.0",
+              "1.16.0",
+              "1.17.0",
+              "1.18.0",
+              "1.19.0",
+              "1.2.0",
+              "1.2.0rc1",
+              "1.2.1",
+              "1.20.0",
+              "1.21.0",
+              "1.21.1",
+              "1.21.2",
+              "1.22.0",
+              "1.23.0",
+              "1.23.1",
+              "1.23.2",
+              "1.23.3",
+              "1.24.0",
+              "1.25.0",
+              "1.26.0",
+              "1.27.0",
+              "1.27.1",
+              "1.27.2",
+              "1.28.0",
+              "1.3.0",
+              "1.3.0rc1",
+              "1.4.0",
+              "1.4.1",
+              "1.5.0",
+              "1.6.0",
+              "1.7.0",
+              "1.7.1",
+              "1.8.0",
+              "1.8.1",
+              "1.9.0",
+              "1.9.1",
+              "1.9.2",
+              "1.9.3",
+              "1.9.4"
+            ],
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/mcp/PYSEC-2026-3483.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-4xh5-x5gv-qwph",
+      "advisory": {
+        "id": "GHSA-4xh5-x5gv-qwph",
+        "summary": "pip's fallback tar extraction doesn't check symbolic links point to extraction directory",
+        "details": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706. Note that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706. Note that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706 and therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706 then pip doesn't use the \"vulnerable\" fallback code. Mitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python >=3.9.17, >=3.10.12, >=3.11.4, or >=3.12), applying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
+        "aliases": [
+          "CVE-2025-8869",
+          "PYSEC-2026-1795"
+        ],
+        "modified": "2026-09-10T03:50:27.949321787Z",
+        "published": "2025-09-24T15:31:14Z",
+        "database_specific": {
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2025-09-24T20:04:58Z",
+          "nvd_published_at": "2025-09-24T15:15:41Z",
+          "cwe_ids": [
+            "CWE-59"
+          ]
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8869"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13550"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/f2b92314da012b9fffa36b3f3e67748a37ef464a"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://lists.debian.org/debian-lts-announce/2025/10/msg00028.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/IF5A3GCJY3VH7BVHJKOWOJFKTW7VFQEN"
+          },
+          {
+            "type": "WEB",
+            "url": "https://pip.pypa.io/en/stable/news/#v25-2"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "25.3"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "last_known_affected_version_range": "<= 25.2",
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/09/GHSA-4xh5-x5gv-qwph/GHSA-4xh5-x5gv-qwph.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-58qw-9mgm-455v",
+      "advisory": {
+        "id": "GHSA-58qw-9mgm-455v",
+        "summary": "pip has an interpretation conflict due to handling both concatenated tar and ZIP files as ZIP files",
+        "details": "pip handles concatenated tar and ZIP files as ZIP files regardless of filename or whether a file is both a tar and ZIP file. This behavior could result in confusing installation behavior, such as installing \"incorrect\" files according to the filename of the archive. New behavior only proceeds with installation if the file identifies uniquely as a ZIP or tar archive, not as both.",
+        "aliases": [
+          "CVE-2026-3219",
+          "PYSEC-2026-2875"
+        ],
+        "modified": "2026-09-10T03:50:42.838011658Z",
+        "published": "2026-04-20T18:31:48Z",
+        "database_specific": {
+          "cwe_ids": [
+            "CWE-434"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-04-24T15:48:17Z",
+          "nvd_published_at": "2026-04-20T16:16:45Z"
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-3219"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/issues/13867"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13870"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/QAJ5JIVWWCAJ4EZL2FP5MOOW35JS7LRJ"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/04/20/8"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "last_known_affected_version_range": "<= 26.0.1",
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/04/GHSA-58qw-9mgm-455v/GHSA-58qw-9mgm-455v.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-6vgw-5pg2-w6jp",
+      "advisory": {
+        "id": "GHSA-6vgw-5pg2-w6jp",
+        "summary": "pip Path Traversal vulnerability",
+        "details": "When pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installation directory. The path traversal is limited to prefixes of the installation directory, thus isn't able to inject or overwrite executable files in typical situations.",
+        "aliases": [
+          "CVE-2026-1703",
+          "PYSEC-2026-1796"
+        ],
+        "modified": "2026-09-10T03:50:34.266257578Z",
+        "published": "2026-02-02T15:30:34Z",
+        "database_specific": {
+          "severity": "LOW",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-02-02T22:08:51Z",
+          "nvd_published_at": "2026-02-02T15:16:30Z",
+          "cwe_ids": [
+            "CWE-22"
+          ]
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1703"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13777"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/8e227a9be4faa9594e05d02ca05a413a2a4e7735"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/WIEA34D4TABF2UNQJAOMXKCICSPBE2DJ"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/02/GHSA-6vgw-5pg2-w6jp/GHSA-6vgw-5pg2-w6jp.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-jp4c-xjxw-mgf9",
+      "advisory": {
+        "id": "GHSA-jp4c-xjxw-mgf9",
+        "summary": "pip Vulnerable to Inclusion of Functionality from Untrusted Control Sphere",
+        "details": "pip prior to version 26.1 would run self-update check functionality after installing wheel files which required importing well-known Python modules names. These module imports were intentionally deferred to increase startup time of the pip CLI. The patch changes self-update functionality to run before wheels are installed to prevent newly-installed modules from being imported shortly after the installation of a wheel package. Users should still review package contents prior to installation.",
+        "aliases": [
+          "CVE-2026-6357",
+          "PYSEC-2026-2876"
+        ],
+        "modified": "2026-09-10T03:50:44.656580653Z",
+        "published": "2026-04-27T15:30:52Z",
+        "database_specific": {
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-05-05T22:05:46Z",
+          "nvd_published_at": "2026-04-27T15:16:20Z",
+          "cwe_ids": [
+            "CWE-829"
+          ],
+          "severity": "MODERATE"
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6357"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13923"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/b369bfc96cc524e00c267e1693290e6599c36bad"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://ichard26.github.io/blog/2026/04/whats-new-in-pip-26.1/#security-fixes"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/04/27/7"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/04/GHSA-jp4c-xjxw-mgf9/GHSA-jp4c-xjxw-mgf9.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:H/UI:A/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-qwm4-qh6w-59xr",
+      "advisory": {
+        "id": "GHSA-qwm4-qh6w-59xr",
+        "summary": "pip would incorrectly handle doubly-encoded package URLs from indexes",
+        "details": "pip would incorrectly handle doubly-encoded package URLs from indexes allowing for files to be installed to arbitrary locations on disk even when installing wheels.\n\nThis vulnerability requires downloading or installing a package from a malicious package index to succeed, malicious packages alone are not able to exploit this vulnerability. Note that this vulnerability only materially impacts users running `pip download` with the `--only-binary` option as installing source distributions from an untrusted index is already an unsafe operation that executes code during install time.",
+        "aliases": [
+          "CVE-2026-13346",
+          "PYSEC-2026-3721"
+        ],
+        "modified": "2026-09-10T03:50:52.923367736Z",
+        "published": "2026-07-29T21:30:59Z",
+        "database_specific": {
+          "cwe_ids": [
+            "CWE-36"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true,
+          "github_reviewed_at": "2026-09-01T18:57:42Z",
+          "nvd_published_at": "2026-07-29T19:16:44Z"
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-13346"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/14110"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/10dfb6b9005484578b386f64b9f36982e3dc6679"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/advisory-database/tree/main/vulns/pip/PYSEC-2026-3721.yaml"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/L2BNQGGVQCEV7DROOORQ7WFKKFF2OOQX"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/07/29/7"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.2.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "26.1",
+              "26.1.1",
+              "26.1.2",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-qwm4-qh6w-59xr/GHSA-qwm4-qh6w-59xr.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:H/AT:P/PR:H/UI:A/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "GHSA-wf93-45jw-7689",
+      "advisory": {
+        "id": "GHSA-wf93-45jw-7689",
+        "summary": " pip: Path traversal in console_scripts/gui_scripts\u00a0entry point names allows installing scripts outside of target directory",
+        "details": "pip would treat console_scripts and gui_scripts as paths instead of file names without sanitizing the resolved absolute path to the installation directory, leading to entry points being installed outside the installation directory.",
+        "aliases": [
+          "CVE-2026-8643",
+          "PYSEC-2026-196"
+        ],
+        "modified": "2026-09-10T03:51:09.636289073Z",
+        "published": "2026-06-01T18:31:53Z",
+        "database_specific": {
+          "github_reviewed_at": "2026-07-08T21:00:36Z",
+          "nvd_published_at": "2026-06-01T17:17:35Z",
+          "cwe_ids": [
+            "CWE-22"
+          ],
+          "severity": "MODERATE",
+          "github_reviewed": true
+        },
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-8643"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/14000"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:33313"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34776"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34777"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34778"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34780"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34891"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:36193"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:36315"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:37275"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:37283"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/security/cve/CVE-2026-8643"
+          },
+          {
+            "type": "WEB",
+            "url": "https://bugzilla.redhat.com/show_bug.cgi?id=2460927"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/advisory-database/tree/main/vulns/pip/PYSEC-2026-196.yaml"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/YV63UET5D3OOJY7O4M5XCVYO2YM4NBYJ"
+          },
+          {
+            "type": "WEB",
+            "url": "https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-8643.json"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34374"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34456"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34739"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34740"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34741"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34748"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34749"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34750"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34752"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34756"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34758"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34760"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34765"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34772"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34773"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34774"
+          },
+          {
+            "type": "WEB",
+            "url": "https://access.redhat.com/errata/RHSA-2026:34775"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/06/01/5"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1.2"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "26.1",
+              "26.1.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/06/GHSA-wf93-45jw-7689/GHSA-wf93-45jw-7689.json"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H"
+          },
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:A/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-1795",
+      "advisory": {
+        "id": "PYSEC-2026-1795",
+        "summary": "pip's fallback tar extraction doesn't check symbolic links point to extraction directory",
+        "details": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706. Note that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706. Note that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706 and therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706 then pip doesn't use the \"vulnerable\" fallback code. Mitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python >=3.9.17, >=3.10.12, >=3.11.4, or >=3.12), applying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
+        "aliases": [
+          "CVE-2025-8869",
+          "GHSA-4xh5-x5gv-qwph"
+        ],
+        "modified": "2026-07-07T17:48:06.199964147Z",
+        "published": "2026-07-07T16:03:05.322538Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8869"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13550"
+          },
+          {
+            "type": "FIX",
+            "url": "https://github.com/pypa/pip/commit/f2b92314da012b9fffa36b3f3e67748a37ef464a"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://lists.debian.org/debian-lts-announce/2025/10/msg00028.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/IF5A3GCJY3VH7BVHJKOWOJFKTW7VFQEN"
+          },
+          {
+            "type": "WEB",
+            "url": "https://pip.pypa.io/en/stable/news/#v25-2"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://pypi.org/project/pip"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-4xh5-x5gv-qwph"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "25.3"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-1795.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:A/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-1796",
+      "advisory": {
+        "id": "PYSEC-2026-1796",
+        "summary": "pip Path Traversal vulnerability",
+        "details": "When pip is installing and extracting a maliciously crafted wheel archive, files may be extracted outside the installation directory. The path traversal is limited to prefixes of the installation directory, thus isn't able to inject or overwrite executable files in typical situations.",
+        "aliases": [
+          "CVE-2026-1703",
+          "GHSA-6vgw-5pg2-w6jp"
+        ],
+        "modified": "2026-07-07T17:48:06.240646692Z",
+        "published": "2026-07-07T16:36:56.040886Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1703"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13777"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/8e227a9be4faa9594e05d02ca05a413a2a4e7735"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/WIEA34D4TABF2UNQJAOMXKCICSPBE2DJ"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://pypi.org/project/pip"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-6vgw-5pg2-w6jp"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.0"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-1796.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-196",
+      "advisory": {
+        "id": "PYSEC-2026-196",
+        "details": "pip would treat console_scripts and gui_scripts as paths instead of file names without sanitizing the resolved absolute path to the installation directory, leading to entry points being installed outside the installation directory.",
+        "aliases": [
+          "CVE-2026-8643",
+          "GHSA-wf93-45jw-7689"
+        ],
+        "modified": "2026-07-13T16:45:04.859457874Z",
+        "published": "2026-06-01T17:17:35.770Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "http://www.openwall.com/lists/oss-security/2026/06/01/5"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/YV63UET5D3OOJY7O4M5XCVYO2YM4NBYJ/"
+          },
+          {
+            "type": "FIX",
+            "url": "https://github.com/pypa/pip/pull/14000"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-wf93-45jw-7689"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1.2"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "26.1",
+              "26.1.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "ecosystem_specific": {},
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-196.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-2875",
+      "advisory": {
+        "id": "PYSEC-2026-2875",
+        "summary": "pip has an interpretation conflict due to handling both concatenated tar and ZIP files as ZIP files",
+        "details": "pip handles concatenated tar and ZIP files as ZIP files regardless of filename or whether a file is both a tar and ZIP file. This behavior could result in confusing installation behavior, such as installing \"incorrect\" files according to the filename of the archive. New behavior only proceeds with installation if the file identifies uniquely as a ZIP or tar archive, not as both.",
+        "aliases": [
+          "CVE-2026-3219",
+          "GHSA-58qw-9mgm-455v"
+        ],
+        "modified": "2026-07-13T16:31:33.455648094Z",
+        "published": "2026-07-13T15:02:52.238290Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-3219"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/issues/13867"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13870"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/QAJ5JIVWWCAJ4EZL2FP5MOOW35JS7LRJ"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/04/20/8"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://pypi.org/project/pip"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-58qw-9mgm-455v"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-2875.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:A/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-2876",
+      "advisory": {
+        "id": "PYSEC-2026-2876",
+        "summary": "pip Vulnerable to Inclusion of Functionality from Untrusted Control Sphere",
+        "details": "pip prior to version 26.1 would run self-update check functionality after installing wheel files which required importing well-known Python modules names. These module imports were intentionally deferred to increase startup time of the pip CLI. The patch changes self-update functionality to run before wheels are installed to prevent newly-installed modules from being imported shortly after the installation of a wheel package. Users should still review package contents prior to installation.",
+        "aliases": [
+          "CVE-2026-6357",
+          "GHSA-jp4c-xjxw-mgf9"
+        ],
+        "modified": "2026-07-13T16:32:57.447552480Z",
+        "published": "2026-07-13T15:02:53.633904Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6357"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/pull/13923"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/pypa/pip/commit/b369bfc96cc524e00c267e1693290e6599c36bad"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://github.com/pypa/pip"
+          },
+          {
+            "type": "WEB",
+            "url": "https://ichard26.github.io/blog/2026/04/whats-new-in-pip-26.1/#security-fixes"
+          },
+          {
+            "type": "WEB",
+            "url": "http://www.openwall.com/lists/oss-security/2026/04/27/7"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://pypi.org/project/pip"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-jp4c-xjxw-mgf9"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.1"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-2876.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.7.5",
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:L/AC:L/AT:P/PR:H/UI:A/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N"
+          }
+        ]
+      }
+    },
+    {
+      "package": {
+        "name": "pip",
+        "version": "25.2"
+      },
+      "id": "PYSEC-2026-3721",
+      "advisory": {
+        "id": "PYSEC-2026-3721",
+        "details": "pip would incorrectly handle doubly-encoded package URLs from indexes allowing for files to be installed to arbitrary locations on disk even when installing wheels.\n\n\n\n\nThis vulnerability requires downloading or installing a package from a malicious package index to succeed, malicious packages alone are not able to exploit this vulnerability. Note that this vulnerability only materially impacts users running `pip download` with the `--only-binary` option as installing source distributions from an untrusted index is already an unsafe operation that executes code during install time.",
+        "aliases": [
+          "CVE-2026-13346",
+          "GHSA-qwm4-qh6w-59xr"
+        ],
+        "modified": "2026-09-10T11:15:08.939447160Z",
+        "published": "2026-07-29T19:16:44.267Z",
+        "references": [
+          {
+            "type": "ADVISORY",
+            "url": "http://www.openwall.com/lists/oss-security/2026/07/29/7"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://mail.python.org/archives/list/security-announce@python.org/thread/L2BNQGGVQCEV7DROOORQ7WFKKFF2OOQX/"
+          },
+          {
+            "type": "FIX",
+            "url": "https://github.com/pypa/pip/pull/14110"
+          },
+          {
+            "type": "ADVISORY",
+            "url": "https://github.com/advisories/GHSA-qwm4-qh6w-59xr"
+          }
+        ],
+        "affected": [
+          {
+            "package": {
+              "name": "pip",
+              "ecosystem": "PyPI",
+              "purl": "pkg:pypi/pip"
+            },
+            "ranges": [
+              {
+                "type": "ECOSYSTEM",
+                "events": [
+                  {
+                    "introduced": "0"
+                  },
+                  {
+                    "fixed": "26.2"
+                  }
+                ]
+              }
+            ],
+            "versions": [
+              "0.2",
+              "0.2.1",
+              "0.3",
+              "0.3.1",
+              "0.4",
+              "0.5",
+              "0.5.1",
+              "0.6",
+              "0.6.1",
+              "0.6.2",
+              "0.6.3",
+              "0.7",
+              "0.7.1",
+              "0.7.2",
+              "0.8",
+              "0.8.1",
+              "0.8.2",
+              "0.8.3",
+              "1.0",
+              "1.0.1",
+              "1.0.2",
+              "1.1",
+              "1.2",
+              "1.2.1",
+              "1.3",
+              "1.3.1",
+              "1.4",
+              "1.4.1",
+              "1.5",
+              "1.5.1",
+              "1.5.2",
+              "1.5.3",
+              "1.5.4",
+              "1.5.5",
+              "1.5.6",
+              "10.0.0",
+              "10.0.0b1",
+              "10.0.0b2",
+              "10.0.1",
+              "18.0",
+              "18.1",
+              "19.0",
+              "19.0.1",
+              "19.0.2",
+              "19.0.3",
+              "19.1",
+              "19.1.1",
+              "19.2",
+              "19.2.1",
+              "19.2.2",
+              "19.2.3",
+              "19.3",
+              "19.3.1",
+              "20.0",
+              "20.0.1",
+              "20.0.2",
+              "20.1",
+              "20.1.1",
+              "20.1b1",
+              "20.2",
+              "20.2.1",
+              "20.2.2",
+              "20.2.3",
+              "20.2.4",
+              "20.2b1",
+              "20.3",
+              "20.3.1",
+              "20.3.2",
+              "20.3.3",
+              "20.3.4",
+              "20.3b1",
+              "21.0",
+              "21.0.1",
+              "21.1",
+              "21.1.1",
+              "21.1.2",
+              "21.1.3",
+              "21.2",
+              "21.2.1",
+              "21.2.2",
+              "21.2.3",
+              "21.2.4",
+              "21.3",
+              "21.3.1",
+              "22.0",
+              "22.0.1",
+              "22.0.2",
+              "22.0.3",
+              "22.0.4",
+              "22.1",
+              "22.1.1",
+              "22.1.2",
+              "22.1b1",
+              "22.2",
+              "22.2.1",
+              "22.2.2",
+              "22.3",
+              "22.3.1",
+              "23.0",
+              "23.0.1",
+              "23.1",
+              "23.1.1",
+              "23.1.2",
+              "23.2",
+              "23.2.1",
+              "23.3",
+              "23.3.1",
+              "23.3.2",
+              "24.0",
+              "24.1",
+              "24.1.1",
+              "24.1.2",
+              "24.1b1",
+              "24.1b2",
+              "24.2",
+              "24.3",
+              "24.3.1",
+              "25.0",
+              "25.0.1",
+              "25.1",
+              "25.1.1",
+              "25.2",
+              "25.3",
+              "26.0",
+              "26.0.1",
+              "26.1",
+              "26.1.1",
+              "26.1.2",
+              "6.0",
+              "6.0.1",
+              "6.0.2",
+              "6.0.3",
+              "6.0.4",
+              "6.0.5",
+              "6.0.6",
+              "6.0.7",
+              "6.0.8",
+              "6.1.0",
+              "6.1.1",
+              "7.0.0",
+              "7.0.1",
+              "7.0.2",
+              "7.0.3",
+              "7.1.0",
+              "7.1.1",
+              "7.1.2",
+              "8.0.0",
+              "8.0.1",
+              "8.0.2",
+              "8.0.3",
+              "8.1.0",
+              "8.1.1",
+              "8.1.2",
+              "9.0.0",
+              "9.0.1",
+              "9.0.2",
+              "9.0.3"
+            ],
+            "ecosystem_specific": {},
+            "database_specific": {
+              "source": "https://github.com/pypa/advisory-database/blob/main/vulns/pip/PYSEC-2026-3721.yaml"
+            }
+          }
+        ],
+        "schema_version": "1.9.0",
+        "severity": [
+          {
+            "type": "CVSS_V3",
+            "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:H/A:N"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

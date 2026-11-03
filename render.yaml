@@ -1,0 +1,27 @@
+# Repository root must contain app.py (use smartsupport-ai as the Git root).
+services:
+  - type: web
+    name: smartsupport-ai-demo
+    runtime: python
+    plan: free
+    autoDeployTrigger: 'off'
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: '3.13.7'
+      - key: SMARTSUPPORT_DEPLOYMENT
+        value: public
+      - key: SMARTSUPPORT_PUBLIC_DEMO_ONLY
+        value: '1'
+      - key: SMARTSUPPORT_ENABLE_LOCAL_LIVE
+        value: '0'
+      - key: SMARTSUPPORT_WEB_DATA_DIR
+        value: /tmp/smartsupport-ai
+      - key: SMARTSUPPORT_MAX_WORKERS
+        value: '2'
+      - key: RUN_LIVE_OPENAI
+        value: '0'
+      - key: PYTHONIOENCODING
+        value: utf-8

@@ -1,0 +1,12 @@
+# Phase 6: pinned UI, OpenAI SDK and MCP versions tested together.
+# Python 3.11+; SQLite, json, decimal and logging are in the standard library.
+openai==2.54.0
+httpx>=0.28.1,<0.29
+certifi>=2026.10.23
+tiktoken==0.14.0
+mcp==1.27.2
+streamlit==1.66.1
+python-dotenv>=1.0,<2.0
+pydantic>=2.11,<3.0
+jsonschema>=4.20,<5
+pytest>=8.0,<10.0

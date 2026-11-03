@@ -1,0 +1,19 @@
+{
+  "provider": "OpenAI",
+  "model": "gpt-5.4-mini-2026-03-17",
+  "api_requests": 2,
+  "input_tokens": 1056,
+  "output_tokens": 72,
+  "cached_tokens": 0,
+  "cost_usd": "0.001116",
+  "budget_usd": "0.02",
+  "budget_used_percent": "5.5800",
+  "verified_at": "2026-11-03",
+  "source_url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+  "stop_reason": "final_answer",
+  "mcp_verified": true,
+  "tool_output_submitted": true,
+  "trace_sha256": "215ef7dea4f90eb4421a22a9969fc3bc912c986fbc18a54b685cbb0e27036afe",
+  "new_paid_calls": 0,
+  "task_sample_size": 1
+}

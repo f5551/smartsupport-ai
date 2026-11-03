@@ -1,0 +1,9 @@
+{
+  "example_key_nonempty": false,
+  "distributable_scan_findings": [],
+  "git_repository_available": false,
+  "limitations": [
+    "Pattern scan excludes local .env by design; it cannot establish key rotation or historical erasure.",
+    "No Git repository was found; tracked files and Git history could not be verified."
+  ]
+}

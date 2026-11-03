@@ -1,0 +1,105 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - paragraph:
+    - img "support_agent icon": support_agent
+    - strong: SmartSupport AI
+  - paragraph: مساحة دعم واحدة، تجربة أوضح.
+  - button "بدء محادثة جديدة":
+    - generic: add_comment
+    - paragraph: بدء محادثة جديدة
+  - paragraph: محادثات هذه الجلسة
+  - combobox "محادثات هذه الجلسة": المحادثة الحالية
+  - button "Open":
+  - paragraph: تظهر محادثات هذا العميل في جلسة المتصفح الحالية فقط.
+  - separator
+  - paragraph: إعدادات التجربة
+  - paragraph: وضع التشغيل
+  - combobox "وضع التشغيل": Demo
+  - button "Open":
+  - paragraph: العميل التجريبي
+  - combobox "العميل التجريبي": عميل تجريبي 1
+  - button "Open":
+  - paragraph: اختيار العميل للعرض فقط، وليس تسجيل دخول أو مصادقة حقيقية.
+  - generic "إعدادات العرض":
+    - generic: tune
+    - paragraph: إعدادات العرض
+  - generic "عن مساحة التجربة":
+    - generic: info
+    - paragraph: عن مساحة التجربة
+  - paragraph: "عرض عام مؤقت: قد تُحذف المحادثات عند نوم الخدمة أو إعادة تشغيلها."
+  - paragraph:
+    - img "lock icon": lock
+    - text: الجلسة خاصة بهذا المتصفح
+  - paragraph: Demo · بيانات اصطناعية
+- banner:
+  - button "Main menu":
+- main:
+  - heading "SmartSupport AI" [level=1]:
+    - generic: support_agent
+    - text: SmartSupport AI
+  - paragraph: متجر الإلكترونيات · مساعد خدمة العملاء الذكي · جلسة خاصة في هذا المتصفح
+  - paragraph:
+    - img "science icon": science
+    - text: Demo • محاكاة
+  - paragraph:
+    - img "hub icon": hub
+    - text: MCP • تم التحقق
+  - paragraph:
+    - img "person icon": person
+    - text: عميل تجريبي 1
+  - paragraph: Demo يستخدم بيانات محاكاة للنموذج، وMCP فعليًا لبيانات متجر اصطناعي. لا توجد تكلفة API.
+  - paragraph: المحادثة
+  - generic: person
+  - group "Chat message from user":
+    - paragraph: أنت
+    - generic: كم تستغرق مدة الشحن؟
+  - generic: support_agent
+  - group "Chat message from assistant":
+    - paragraph: SmartSupport
+    - generic: "مدة الشحن التجريبية من 2 إلى 5 أيام عمل بعد تأكيد الطلب. (المصدر: FAQ-001) رسوم الشحن الافتراضية 20 ريالًا، والشحن مجاني للطلبات من 300 ريال قبل أي رسوم إضافية معلنة. (المصدر: FAQ-004) تحقق من حالة الطلب. إذا تجاوزت المدة الافتراضية 5 أيام عمل بعد التأكيد، يمكنك طلب تذكرة متابعة بعد الموافقة. (المصدر: FAQ-007)"
+  - paragraph:
+    - img "database icon": database
+    - text: مصدر الاستعلام عبر MCP
+  - paragraph: قاعدة معرفة المتجر · search_faq
+  - button "حفظ ملخص المحادثة":
+    - generic: bookmark_add
+    - paragraph: حفظ ملخص المحادثة
+  - button "استرجاع الذاكرة":
+    - generic: history
+    - paragraph: استرجاع الذاكرة
+  - textbox "اكتب سؤالك أو رقم الطلب التجريبي…"
+  - button "Send message" [disabled]:
+  - generic "لوحة النشاط والتكلفة":
+    - generic: monitoring
+    - paragraph: لوحة النشاط والتكلفة
+  - heading "نشاط الوكيل" [level=3]
+  - paragraph: "سبب التوقف: اكتملت الإجابة · final_answer"
+  - paragraph: "طلبات MCP: 1 · نتائج مؤكدة: 1"
+  - paragraph:
+    - generic: نجاح
+  - generic: نجاح · search_faq · 17 ms
+  - paragraph: 01 · 16:37:38 UTC
+  - paragraph:
+    - text: "مدة التنفيذ: 121 ms"
+    - button "Help":
+  - heading "الاستهلاك والتكلفة" [level=3]
+  - paragraph:
+    - generic: بيانات محاكاة
+  - paragraph: رموز الإدخال
+  - paragraph: "40"
+  - paragraph: رموز الإخراج
+  - paragraph: "20"
+  - paragraph: تكلفة محاكاة (USD)
+  - paragraph: "0.000008"
+  - paragraph: "النموذج: fake-test-model"
+  - paragraph: "usage_source: simulation · estimated_cost_usd: 0.000008"
+  - paragraph: القيم اصطناعية لا تمثل فاتورة OpenAI أو تكلفة API فعلية.
+  - separator
+  - paragraph: ميزانية المهمة التقديرية
+  - progressbar "progress"
+  - paragraph: "المتبقي تقديريًا: 0.019992 USD · الحد: 0.02 USD"
+  - paragraph:
+    - generic: ضمن الحد التقديري
+  - paragraph: تقدير وقائي؛ ليس ضمانًا لسقف الفاتورة.
+  - paragraph: SmartSupport AI · دعم يستند إلى بيانات المتجر · الموافقة قبل كل كتابة

@@ -1,0 +1,12 @@
+{
+  "live_model_request_durations_ms": [
+    5445,
+    4051
+  ],
+  "live_mcp_durations_ms": [
+    19
+  ],
+  "live_task_elapsed_ms": 9558.439,
+  "live_task_sample_size": 1,
+  "live_request_sample_size": 2
+}

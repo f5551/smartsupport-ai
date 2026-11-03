@@ -1,0 +1,19 @@
+{
+  "reports_complete": [
+    "production_readiness.md",
+    "security_audit.md",
+    "functional_tests.md",
+    "ai_evaluation.md",
+    "performance_report.md",
+    "known_issues.md"
+  ],
+  "all_report_links_resolve": true,
+  "arabic_eval_cases": 30,
+  "real_eval_not_executed": 10,
+  "protected_original_files_unchanged": 84,
+  "real_key_absent_from_reports": true,
+  "release_secret_findings": [],
+  "production_code_changes": false,
+  "new_paid_calls": 0,
+  "final_verdict": "NO-GO"
+}

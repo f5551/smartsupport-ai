@@ -1,0 +1,90 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - paragraph:
+    - img "support_agent icon": support_agent
+    - strong: SmartSupport AI
+  - paragraph: مساحة دعم واحدة، تجربة أوضح.
+  - button "بدء محادثة جديدة":
+    - generic: add_comment
+    - paragraph: بدء محادثة جديدة
+  - paragraph: محادثات هذه الجلسة
+  - combobox "محادثات هذه الجلسة": المحادثة الحالية
+  - button "Open":
+  - paragraph: تظهر محادثات هذا العميل في جلسة المتصفح الحالية فقط.
+  - separator
+  - paragraph: إعدادات التجربة
+  - paragraph: وضع التشغيل
+  - combobox "وضع التشغيل": Demo
+  - button "Open":
+  - paragraph: العميل التجريبي
+  - combobox "العميل التجريبي": عميل تجريبي 1
+  - button "Open":
+  - paragraph: اختيار العميل للعرض فقط، وليس تسجيل دخول أو مصادقة حقيقية.
+  - generic "إعدادات العرض":
+    - generic: tune
+    - paragraph: إعدادات العرض
+  - generic "عن مساحة التجربة":
+    - generic: info
+    - paragraph: عن مساحة التجربة
+  - paragraph: "عرض عام مؤقت: قد تُحذف المحادثات عند نوم الخدمة أو إعادة تشغيلها."
+  - paragraph:
+    - img "lock icon": lock
+    - text: الجلسة خاصة بهذا المتصفح
+  - paragraph: Demo · بيانات اصطناعية
+- banner:
+  - button "Main menu":
+- main:
+  - heading "SmartSupport AI" [level=1]:
+    - generic: support_agent
+    - text: SmartSupport AI
+  - paragraph: متجر الإلكترونيات · مساعد خدمة العملاء الذكي · جلسة خاصة في هذا المتصفح
+  - paragraph:
+    - img "science icon": science
+    - text: Demo • محاكاة
+  - paragraph:
+    - img "hub icon": hub
+    - text: MCP • لم يُتحقق بعد
+  - paragraph:
+    - img "person icon": person
+    - text: عميل تجريبي 1
+  - paragraph: Demo يستخدم بيانات محاكاة للنموذج، وMCP فعليًا لبيانات متجر اصطناعي. لا توجد تكلفة API.
+  - heading "كيف أقدر أساعدك اليوم؟" [level=3]
+  - generic: من أول سؤال إلى متابعة طلبك؛ دعم واضح، وكل كتابة بموافقتك.
+  - button "ما سياسة الاسترجاع؟":
+    - generic: assignment_return
+    - paragraph: ما سياسة الاسترجاع؟
+  - button "كم تستغرق مدة الشحن؟":
+    - generic: local_shipping
+    - paragraph: كم تستغرق مدة الشحن؟
+  - button "تتبع طلبي":
+    - generic: package_2
+    - paragraph: تتبع طلبي
+  - button "أجهّز شكوى":
+    - generic: support_agent
+    - paragraph: أجهّز شكوى
+  - paragraph: ابدأ بسؤال جاهز أو اكتب سؤالك بالأسفل.
+  - paragraph: المحادثة
+  - generic: support_agent
+  - group "Chat message from assistant":
+    - generic: أهلًا بك! أساعدك في الشحن والاسترجاع والضمان ومتابعة طلبك التجريبي.
+  - button "حفظ ملخص المحادثة" [disabled]:
+    - generic: bookmark_add
+    - paragraph: حفظ ملخص المحادثة
+  - button "استرجاع الذاكرة":
+    - generic: history
+    - paragraph: استرجاع الذاكرة
+  - textbox "اكتب سؤالك أو رقم الطلب التجريبي…"
+  - button "Send message" [disabled]:
+  - generic "لوحة النشاط والتكلفة":
+    - generic: monitoring
+    - paragraph: لوحة النشاط والتكلفة
+  - heading "نشاط الوكيل" [level=3]
+  - paragraph: لم تُنفذ مهمة بعد. ستظهر هنا استدعاءات الأدوات ونتائجها الفعلية.
+  - paragraph:
+    - img "lock icon": lock
+    - text: موافقة بشرية قبل كل كتابة
+  - heading "الاستهلاك والتكلفة" [level=3]
+  - paragraph: لم يُستدعَ نموذج بعد. تُعرض القيم بعد أول تنفيذ.
+  - paragraph: "النموذج والميزانية: في انتظار بدء المهمة"
+  - paragraph: SmartSupport AI · دعم يستند إلى بيانات المتجر · الموافقة قبل كل كتابة

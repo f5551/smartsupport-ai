@@ -1,0 +1,33 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+___________ test_65th_visitor_is_admitted_after_default_idle_expiry ___________
+
+tmp_path = WindowsPath('C:/Users/HP/AppData/Local/Temp/pytest-of-HP/pytest-46/test_65th_visitor_is_admitted_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023AD8CCE8B0>
+
+    def test_65th_visitor_is_admitted_after_default_idle_expiry(tmp_path, monkeypatch):
+        clock = Clock()
+        monkeypatch.setattr('web_runtime.monotonic', clock)
+        backend = WebBackend(tmp_path)
+        visitors = [backend.new_visitor() for _ in range(64)]
+        with pytest.raises(WebError, match='busy'):
+            backend.new_visitor()
+        clock.advance(1801)
+>       fresh = backend.new_visitor()
+                ^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_visitor_sessions.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <web_runtime.WebBackend object at 0x0000023ADBC6FA10>
+
+    def new_visitor(self):
+        with self.lock:
+            if len(self.visitors) >= 64:
+>               raise WebError("busy")
+E               web_controls.WebError: busy
+
+web_runtime.py:227: WebError
+=========================== short test summary info ===========================
+FAILED tests/test_visitor_sessions.py::test_65th_visitor_is_admitted_after_default_idle_expiry
+1 failed in 3.11s

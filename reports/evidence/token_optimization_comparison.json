@@ -1,0 +1,35 @@
+{
+  "scenario": "Same Arabic FAQ and deterministic FAQ data, FakeOpenAI/FakeMCP; no paid API",
+  "sample_size": 1,
+  "token_estimation_method": "o200k JSON +256 framing +8/item +16/tool; normalized call IDs; same method both sides",
+  "before": {
+    "api_calls_simulated": 2,
+    "local_input_estimate_per_request": [
+      1068,
+      1194
+    ],
+    "local_input_estimate_total": 2262,
+    "request_context_chars_total": 6122,
+    "output_token_cap_per_request": 512,
+    "estimated_envelope_usd_at_gpt54mini_rates": "0.0063045"
+  },
+  "after": {
+    "api_calls_simulated": 2,
+    "local_input_estimate_per_request": [
+      961,
+      1077
+    ],
+    "local_input_estimate_total": 2038,
+    "request_context_chars_total": 5171,
+    "output_token_cap_per_request": 350,
+    "estimated_envelope_usd_at_gpt54mini_rates": "0.0046785"
+  },
+  "local_input_estimate_reduction_percent": "9.902740937223695844385499558",
+  "after_local_elapsed_ms": 318.606,
+  "before_local_elapsed_ms": null,
+  "real_api_cost_after": null,
+  "simulated_usage_is_fixed_not_a_savings_measure": true,
+  "long_memory_result_chars_before": 17116,
+  "long_memory_result_chars_after": 1993,
+  "original_trace_hashes_preserved": true
+}

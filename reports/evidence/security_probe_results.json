@@ -1,0 +1,63 @@
+{
+  "scope": "Synthetic isolated local audit; no paid requests",
+  "observations": [
+    {
+      "id": "SEC-P01",
+      "production_requirement": "Expire disconnected visitor registrations",
+      "production_result": "Fail",
+      "probe_assertion": "Pass",
+      "actual": "After 64 registrations without conversations/workers, the 65th is rejected as busy; no visitor removal/expiry exists.",
+      "live_workers": 0,
+      "registered_visitors": 64
+    },
+    {
+      "id": "SEC-P02",
+      "production_requirement": "Authenticated customer identity",
+      "production_result": "Fail",
+      "probe_assertion": "Pass",
+      "actual": "One unauthenticated visitor selects either synthetic customer label; no login/identity proof is required. Per-conversation DBs remain isolated; this is not a real-data breach demonstration."
+    },
+    {
+      "id": "SEC-P03",
+      "production_requirement": "Reject overlong input before model/tool work",
+      "production_result": "Pass",
+      "probe_assertion": "Pass",
+      "actual": "1001 characters rejected as invalid_input; worker not started."
+    },
+    {
+      "id": "SEC-P04",
+      "production_requirement": "Prevent another visitor reading a conversation",
+      "production_result": "Pass",
+      "probe_assertion": "Pass",
+      "actual": "Second visitor denied with session_lost."
+    },
+    {
+      "id": "SEC-P05",
+      "production_requirement": "Do not expose internal prompt in final text",
+      "production_result": "Fail",
+      "probe_assertion": "Pass",
+      "actual": "Agent accepts a scripted Fake model final answer equal to its own application SYSTEM_PROMPT. No output content validator rejects it.",
+      "limitation": "Not a successful attack against OpenAI; genuine model resistance is unmeasured. No API credential was present or returned."
+    },
+    {
+      "id": "SEC-P07",
+      "production_requirement": "One approval cannot authorize two concurrent MCP writes",
+      "production_result": "Pass",
+      "probe_assertion": "Pass",
+      "actual": "Two independent real stdio MCP servers attempted the same exact operation with one grant concurrently: one success, one APPROVAL_REQUIRED; ticket count rose from 3 to 4 only.",
+      "ticket_count_after": 4
+    },
+    {
+      "id": "SEC-P06",
+      "production_requirement": "Render user/model XSS payload as inert text",
+      "production_result": "Pass",
+      "probe_assertion": "Pass",
+      "actual": "Actual Streamlit AppTest rendered both user and Fake assistant payloads in st.text nodes, absent from Markdown/HTML nodes.",
+      "limitation": "Element-tree test, not a browser JavaScript execution or CSP test."
+    }
+  ],
+  "probe_assertions_passed": 7,
+  "probe_assertions_failed": 0,
+  "production_requirements_passed": 4,
+  "production_requirements_failed": 3
+}

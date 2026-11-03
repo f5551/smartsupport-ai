@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "currency": "USD",
+  "unit": "per_1000000_tokens",
+  "models": {
+    "gpt-5.4-mini-2026-03-17": {
+      "provider": "OpenAI",
+      "aliases": ["gpt-5.4-mini"],
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+      "verified_at": "2026-11-03",
+      "tiers": {"default": {"input": "0.75", "cached_input": "0.075", "output": "4.50"}}
+    },
+    "gpt-4.1-mini-2025-04-14": {
+      "provider": "OpenAI",
+      "aliases": ["gpt-4.1-mini"],
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-4.1-mini",
+      "verified_at": "2026-11-03",
+      "tiers": {"default": {"input": "0.40", "cached_input": "0.10", "output": "1.60"}}
+    },
+    "gpt-4o-mini-2024-07-18": {
+      "provider": "OpenAI",
+      "aliases": ["gpt-4o-mini"],
+      "source_url": "https://developers.openai.com/api/docs/models/gpt-4o-mini",
+      "verified_at": "2026-11-03",
+      "tiers": {"default": {"input": "0.15", "cached_input": "0.075", "output": "0.60"}}
+    }
+  }
+}

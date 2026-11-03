@@ -1,0 +1,28 @@
+{
+  "all_limits": {
+    "MAX_AGENT_TURNS": 4,
+    "MAX_OUTPUT_TOKENS": 350,
+    "MAX_INPUT_TOKENS": 3000,
+    "MAX_TOOL_CALLS": 3,
+    "MAX_HISTORY_MESSAGES": 6,
+    "MAX_TOOL_RESULT_CHARS": 2000,
+    "MAX_TASK_COST_USD": "0.005",
+    "MAX_DAILY_COST_USD": "0.10",
+    "MAX_API_RETRIES": 0
+  },
+  "pytest_passed": 275,
+  "pytest_failed": 0,
+  "pytest_skipped": 1,
+  "paid_test_deselected": 1,
+  "pytest_seconds": "156.047",
+  "focused_tests_passed": 61,
+  "original_jsonl_unchanged": true,
+  "business_store_databases_unchanged": true,
+  "business_store_files_checked": 8,
+  "operational_counter_diff_since_prior_audit": [
+    "data\\web_demo\\web_controls.sqlite3"
+  ],
+  "counter_file_restored_or_deleted": false,
+  "secret_scan_findings": [],
+  "new_paid_calls": 0
+}

@@ -1,0 +1,63 @@
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+.envrc
+.streamlit/secrets.toml
+
+# Python environments, build outputs and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+# Local full-project bundle; may contain environments and private runtime files.
+/smartsupport-ai.zip
+*.egg-info/
+
+# Runtime data and private audit trails
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+~$*
+logs/
+*.jsonl
+*.pem
+*.key
+*.p12
+*.pfx
+.runtime/
+session_registry.lock
+# Local test reports can include synthetic test input values.
+/reports/evidence/*pytest*.xml
+/reports/evidence/*focused*.xml
+data/web_demo/
+traces/*
+!traces/.gitkeep
+# Only these reviewed, isolated-integration artifacts are distributable.
+!traces/success_1.jsonl
+!traces/near_failure_recovery.jsonl
+!traces/explicit_failure.jsonl
+
+# Local editor / OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

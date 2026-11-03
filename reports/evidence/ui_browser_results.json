@@ -1,0 +1,46 @@
+{
+  "url": "http://127.0.0.1:8517",
+  "mode": "public Demo only",
+  "fixture_directory": "reports/evidence/ui_fixture",
+  "paid_calls": 0,
+  "browser": "Chrome desktop",
+  "desktop_viewport": [
+    1366,
+    651
+  ],
+  "mobile_emulated_viewport": [
+    390,
+    844
+  ],
+  "desktop_document_width": 1366,
+  "mobile_document_width": 390,
+  "main_direction": "rtl",
+  "html_lang": "en",
+  "separate_tab_has_no_first_conversation": true,
+  "shipping_source": "search_faq",
+  "simulation_label_visible": true,
+  "pending_disables_input_and_memory": true,
+  "cancel_observed_no_creation": true,
+  "confirmed_create_ticket_mcp_result": true,
+  "fixture_counts_after_ui": [
+    {
+      "customers": 5,
+      "orders": 10,
+      "tickets": 4,
+      "integrity": "ok"
+    },
+    {
+      "customers": 5,
+      "orders": 10,
+      "tickets": 3,
+      "integrity": "ok"
+    }
+  ],
+  "xss_user_payload_rendered_literal": true,
+  "xss_image_nodes": 0,
+  "xss_execution_marker": null,
+  "model_xss_test": "AppTest security probe only",
+  "screen_reader_audit": false,
+  "physical_phone_test": false,
+  "confirmation_authorization": "direct user approval received after automated review initially blocked UI action"
+}

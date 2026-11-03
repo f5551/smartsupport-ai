@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-03",
+  "command": "RUN_LIVE_OPENAI=0; .venv/Scripts/python.exe -m pytest -q --junitxml=reports/evidence/visitor_sessions_pytest.xml",
+  "pytest": {
+    "passed": 294,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 2,
+    "visitor_cases": 19
+  },
+  "protected_files_unchanged": {
+    "traces\\explicit_failure.jsonl": true,
+    "traces\\live_failure_previous_4b1f09529bb04428b473ff00743e644e.jsonl": true,
+    "traces\\live_success_1.jsonl": true,
+    "traces\\near_failure_recovery.jsonl": true,
+    "traces\\success_1.jsonl": true,
+    "data\\smartsupport.db": true
+  },
+  "paid_openai_requests": 0,
+  "idle_default_seconds": 1800,
+  "capacity": {
+    "valid_visitors": 64,
+    "conversations_of_valid_visitors_including_reservations": 128
+  },
+  "cleanup_deletes_conversations_or_logs": false,
+  "ui_changed": false
+}

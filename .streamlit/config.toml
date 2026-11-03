@@ -1,0 +1,55 @@
+[server]
+address = "127.0.0.1"
+headless = true
+enableStaticServing = false
+enableCORS = true
+enableXsrfProtection = true
+maxUploadSize = 1
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = "none"
+toolbarMode = "viewer"
+
+[theme]
+font = "IBM Plex Sans Arabic, Tahoma, Arial, sans-serif"
+metricValueFontSize = "1.55rem"
+baseRadius = "0.9rem"
+buttonRadius = "0.65rem"
+showWidgetBorder = true
+showSidebarBorder = true
+paddingTop = "1rem"
+paddingBottom = "2rem"
+
+[theme.sidebar]
+paddingTop = "1rem"
+
+[theme.light]
+primaryColor = "#6038E8"
+backgroundColor = "#F7F8FC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#20283D"
+borderColor = "#E5E8F1"
+greenColor = "#16A573"
+orangeColor = "#F59E0B"
+
+[theme.light.sidebar]
+backgroundColor = "#111B38"
+secondaryBackgroundColor = "#1E2A4D"
+textColor = "#FFFFFF"
+borderColor = "#33405F"
+primaryColor = "#6038E8"
+
+[theme.dark]
+primaryColor = "#6038E8"
+backgroundColor = "#0D1429"
+secondaryBackgroundColor = "#18213D"
+textColor = "#E7EDF5"
+borderColor = "#304256"
+
+[theme.dark.sidebar]
+backgroundColor = "#111B38"
+secondaryBackgroundColor = "#1E2A4D"
+textColor = "#E7EDF5"

@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "description": "بيانات اصطناعية للتهيئة التجريبية فقط؛ معرّفات العملاء ليست أسرارًا ولا إثبات هوية. عناوين البريد غير حقيقية.",
+  "customers": [
+    {"customer_id": "demo_customer_001", "display_name": "عميل تجريبي 1", "email": "customer001@example.invalid"},
+    {"customer_id": "demo_customer_002", "display_name": "عميل تجريبي 2", "email": "customer002@example.invalid"},
+    {"customer_id": "demo_customer_003", "display_name": "عميل تجريبي 3", "email": "customer003@example.invalid"},
+    {"customer_id": "demo_customer_004", "display_name": "عميل تجريبي 4", "email": "customer004@example.invalid"},
+    {"customer_id": "demo_customer_005", "display_name": "عميل تجريبي 5", "email": "customer005@example.invalid"}
+  ],
+  "orders": [
+    {
+      "order_id": "DEMO-1001",
+      "customer_id": "demo_customer_001",
+      "status": "shipped",
+      "items": [{"sku": "DEMO-HEADSET-01", "name": "سماعة لاسلكية تجريبية", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-1002",
+      "customer_id": "demo_customer_001",
+      "status": "delivered",
+      "items": [{"sku": "DEMO-MONITOR-01", "name": "شاشة تجريبية", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-2001",
+      "customer_id": "demo_customer_002",
+      "status": "processing",
+      "items": [{"sku": "DEMO-KEYBOARD-01", "name": "لوحة مفاتيح تجريبية", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-2002", "customer_id": "demo_customer_002", "status": "delivered",
+      "items": [{"sku": "DEMO-MOUSE-01", "name": "فأرة تجريبية", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-3001", "customer_id": "demo_customer_003", "status": "shipped",
+      "items": [{"sku": "DEMO-TABLET-01", "name": "جهاز لوحي تجريبي", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-3002", "customer_id": "demo_customer_003", "status": "processing",
+      "items": [{"sku": "DEMO-CHARGER-01", "name": "شاحن تجريبي", "quantity": 2}]
+    },
+    {
+      "order_id": "DEMO-4001", "customer_id": "demo_customer_004", "status": "delivered",
+      "items": [{"sku": "DEMO-LAPTOP-01", "name": "حاسوب محمول تجريبي", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-4002", "customer_id": "demo_customer_004", "status": "cancelled",
+      "items": [{"sku": "DEMO-CABLE-01", "name": "كابل تجريبي", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-5001", "customer_id": "demo_customer_005", "status": "processing",
+      "items": [{"sku": "DEMO-HEADSET-01", "name": "سماعة لاسلكية تجريبية", "quantity": 1}]
+    },
+    {
+      "order_id": "DEMO-5002", "customer_id": "demo_customer_005", "status": "delivered",
+      "items": [{"sku": "DEMO-SPEAKER-01", "name": "مكبر صوت تجريبي", "quantity": 1}]
+    }
+  ],
+  "tickets": [
+    {
+      "ticket_id": "DEMO-TKT-001", "customer_id": "demo_customer_001", "order_id": "DEMO-1002",
+      "description": "شكوى تجريبية عن تلف الشاشة عند الاستلام", "status": "open", "created_at": "2026-11-01T09:00:00Z"
+    },
+    {
+      "ticket_id": "DEMO-TKT-002", "customer_id": "demo_customer_002", "order_id": "DEMO-2002",
+      "description": "شكوى تجريبية عن توقف الفأرة", "status": "in_progress", "created_at": "2026-11-01T10:00:00Z"
+    },
+    {
+      "ticket_id": "DEMO-TKT-003", "customer_id": "demo_customer_004", "order_id": "DEMO-4001",
+      "description": "استفسار تجريبي عن ضمان الحاسوب تمت معالجته", "status": "resolved", "created_at": "2026-11-02T08:00:00Z"
+    }
+  ]
+}

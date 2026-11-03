@@ -1,0 +1,10 @@
+{
+  "scenario": "visitor_registry_capacity",
+  "created_visitors": 64,
+  "workers_started": 0,
+  "conversations_created": 0,
+  "next_visitor_error": "busy",
+  "existing_registry_size": 64,
+  "in_process_expiry_or_eviction_api": false,
+  "source": "web_runtime.py:201,220-226"
+}

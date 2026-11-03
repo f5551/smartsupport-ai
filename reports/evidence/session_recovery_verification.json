@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-03",
+  "pytest": {
+    "passed": 319,
+    "failed": 0,
+    "skipped": 2,
+    "tests_collected": 321,
+    "command": "$env:RUN_LIVE_OPENAI=0; .venv/Scripts/python.exe -m pytest -q --junitxml=reports/evidence/session_recovery_pytest.xml",
+    "skip_reasons": [
+      "Paid OpenAI integration requires explicit opt-in",
+      "Linux-only deployment runner unavailable"
+    ]
+  },
+  "focused_restart_tests": "26 passed; includes session recovery, cost multi-process concurrency and old-session expiry regression",
+  "paid_openai_calls": 0,
+  "real_store_data_used": false,
+  "mcp_protocol_or_tools_changed": false,
+  "original_logs_and_store_unchanged": true,
+  "protected_file_hashes_match": {
+    "traces\\explicit_failure.jsonl": true,
+    "traces\\live_failure_previous_4b1f09529bb04428b473ff00743e644e.jsonl": true,
+    "traces\\live_success_1.jsonl": true,
+    "traces\\near_failure_recovery.jsonl": true,
+    "traces\\success_1.jsonl": true,
+    "data\\smartsupport.db": true
+  },
+  "release_scan_findings": [],
+  "release_scan_files": 141
+}

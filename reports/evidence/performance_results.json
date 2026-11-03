@@ -1,0 +1,499 @@
+{
+  "run_started_utc": "2026-11-03T16:32:31.459783+00:00",
+  "python": "3.13.7",
+  "platform": "win32",
+  "paid_api_requests": 0,
+  "original_store_used": false,
+  "load_warning": "Small shared-host Windows sample; includes synthetic model and real local MCP, not production capacity.",
+  "percentile_method": "nearest-rank",
+  "cases": [
+    {
+      "id": "REL-01",
+      "scenario": "openai_connection_error",
+      "verdict": "PASS",
+      "evidence": {
+        "stop_reason": "openai_error",
+        "model_requests": 1,
+        "mcp_tool_attempts": [],
+        "audit_errors": [
+          "API_ERROR"
+        ],
+        "usage_complete": false,
+        "tickets_unchanged": true,
+        "transport_shutdown_error": null
+      },
+      "elapsed_ms": 1116.999
+    },
+    {
+      "id": "REL-02",
+      "scenario": "openai_timeout",
+      "verdict": "PASS",
+      "evidence": {
+        "stop_reason": "openai_error",
+        "model_requests": 1,
+        "mcp_tool_attempts": [],
+        "audit_errors": [
+          "API_ERROR"
+        ],
+        "usage_complete": false,
+        "tickets_unchanged": true,
+        "transport_shutdown_error": null
+      },
+      "elapsed_ms": 1180.418
+    },
+    {
+      "id": "REL-03",
+      "scenario": "mcp_timeout",
+      "verdict": "PASS",
+      "evidence": {
+        "stop_reason": "mcp_error",
+        "model_requests": 1,
+        "mcp_tool_attempts": [
+          "search_faq"
+        ],
+        "audit_errors": [
+          "MCP_TRANSPORT_ERROR"
+        ],
+        "usage_complete": true,
+        "tickets_unchanged": true,
+        "transport_shutdown_error": null
+      },
+      "elapsed_ms": 18108.63
+    },
+    {
+      "id": "REL-04",
+      "scenario": "mcp_crash",
+      "verdict": "PASS",
+      "evidence": {
+        "stop_reason": "mcp_error",
+        "model_requests": 1,
+        "mcp_tool_attempts": [
+          "search_faq"
+        ],
+        "audit_errors": [
+          "MCP_TRANSPORT_ERROR"
+        ],
+        "usage_complete": true,
+        "tickets_unchanged": true,
+        "transport_shutdown_error": null
+      },
+      "elapsed_ms": 1092.521
+    },
+    {
+      "id": "REL-05",
+      "scenario": "budget",
+      "verdict": "PASS",
+      "evidence": {
+        "stop_reason": "budget_limit",
+        "model_requests": 0,
+        "mcp_tool_attempts": [],
+        "audit_errors": [
+          "BUDGET_LIMIT"
+        ],
+        "usage_complete": true,
+        "tickets_unchanged": true,
+        "transport_shutdown_error": null
+      },
+      "elapsed_ms": 1144.779
+    },
+    {
+      "id": "REL-06",
+      "scenario": "database_unavailable",
+      "verdict": "PASS",
+      "evidence": {
+        "mcp_error_code": "STORAGE_ERROR",
+        "database_recreated": false,
+        "original_test_file_preserved": true
+      },
+      "elapsed_ms": 1406.371
+    },
+    {
+      "id": "REL-07",
+      "scenario": "write_failure_after_consumed_approval",
+      "verdict": "PASS",
+      "evidence": {
+        "first_error": "STORAGE_ERROR",
+        "replay_error": "APPROVAL_REQUIRED",
+        "grant_consumed": true,
+        "tickets_before": 3,
+        "tickets_after": 3,
+        "atomicity_gap_reproduced": true
+      },
+      "elapsed_ms": 2032.321
+    },
+    {
+      "id": "REL-08",
+      "scenario": "lost_pending_state",
+      "verdict": "PASS",
+      "evidence": {
+        "error_code": "session_lost",
+        "tickets_unchanged": true,
+        "grant_issued": false
+      },
+      "elapsed_ms": 1486.639
+    },
+    {
+      "id": "REL-09",
+      "scenario": "full_app_restart",
+      "verdict": "PASS",
+      "evidence": {
+        "old_conversation_access": "session_lost",
+        "pending_recovered": false,
+        "database_still_exists": true,
+        "tickets_unchanged": true
+      },
+      "elapsed_ms": 1688.48
+    }
+  ],
+  "progressive_load": {
+    "samples": [
+      {
+        "stage_concurrent_sessions": 1,
+        "wave": "cold",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 80,
+        "usage_source": "simulation",
+        "elapsed_ms": 1505.984
+      },
+      {
+        "stage_concurrent_sessions": 1,
+        "wave": "warm",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 90,
+        "usage_source": "simulation",
+        "elapsed_ms": 140.528
+      },
+      {
+        "stage_concurrent_sessions": 2,
+        "wave": "cold",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 57,
+        "usage_source": "simulation",
+        "elapsed_ms": 1167.394
+      },
+      {
+        "stage_concurrent_sessions": 2,
+        "wave": "cold",
+        "sequence": 1,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 54,
+        "usage_source": "simulation",
+        "elapsed_ms": 2151.375
+      },
+      {
+        "stage_concurrent_sessions": 2,
+        "wave": "warm",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 58,
+        "usage_source": "simulation",
+        "elapsed_ms": 96.726
+      },
+      {
+        "stage_concurrent_sessions": 2,
+        "wave": "warm",
+        "sequence": 1,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 62,
+        "usage_source": "simulation",
+        "elapsed_ms": 116.868
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "cold",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 58,
+        "usage_source": "simulation",
+        "elapsed_ms": 1090.597
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "cold",
+        "sequence": 1,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 63,
+        "usage_source": "simulation",
+        "elapsed_ms": 4036.662
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "cold",
+        "sequence": 2,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 59,
+        "usage_source": "simulation",
+        "elapsed_ms": 3056.678
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "cold",
+        "sequence": 3,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 66,
+        "usage_source": "simulation",
+        "elapsed_ms": 2089.461
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "warm",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 122,
+        "usage_source": "simulation",
+        "elapsed_ms": 167.366
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "warm",
+        "sequence": 1,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 122,
+        "usage_source": "simulation",
+        "elapsed_ms": 165.774
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "warm",
+        "sequence": 2,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 93,
+        "usage_source": "simulation",
+        "elapsed_ms": 184.327
+      },
+      {
+        "stage_concurrent_sessions": 4,
+        "wave": "warm",
+        "sequence": 3,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 120,
+        "usage_source": "simulation",
+        "elapsed_ms": 164.801
+      }
+    ],
+    "stages": [
+      {
+        "concurrent_sessions": 1,
+        "summary": {
+          "n": 2,
+          "p50_ms": 140.528,
+          "p95_ms": 1505.984,
+          "min_ms": 140.528,
+          "max_ms": 1505.984,
+          "failures": 0,
+          "database_errors": 0
+        },
+        "sqlite_checks": [
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          }
+        ]
+      },
+      {
+        "concurrent_sessions": 2,
+        "summary": {
+          "n": 4,
+          "p50_ms": 116.868,
+          "p95_ms": 2151.375,
+          "min_ms": 96.726,
+          "max_ms": 2151.375,
+          "failures": 0,
+          "database_errors": 0
+        },
+        "sqlite_checks": [
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          },
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          }
+        ]
+      },
+      {
+        "concurrent_sessions": 4,
+        "summary": {
+          "n": 8,
+          "p50_ms": 184.327,
+          "p95_ms": 4036.662,
+          "min_ms": 164.801,
+          "max_ms": 4036.662,
+          "failures": 0,
+          "database_errors": 0
+        },
+        "sqlite_checks": [
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          },
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          },
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          },
+          {
+            "integrity_check": "ok",
+            "foreign_key_errors": 0,
+            "ticket_count": 3
+          }
+        ]
+      }
+    ],
+    "overall": {
+      "n": 14,
+      "p50_ms": 184.327,
+      "p95_ms": 4036.662,
+      "min_ms": 96.726,
+      "max_ms": 4036.662,
+      "failures": 0,
+      "database_errors": 0
+    },
+    "cold": {
+      "n": 7,
+      "p50_ms": 2089.461,
+      "p95_ms": 4036.662,
+      "min_ms": 1090.597,
+      "max_ms": 4036.662,
+      "failures": 0,
+      "database_errors": 0
+    },
+    "warm": {
+      "n": 7,
+      "p50_ms": 164.801,
+      "p95_ms": 184.327,
+      "min_ms": 96.726,
+      "max_ms": 184.327,
+      "failures": 0,
+      "database_errors": 0
+    }
+  },
+  "rapid_messages": {
+    "summary": {
+      "n": 3,
+      "p50_ms": 186.943,
+      "p95_ms": 295.349,
+      "min_ms": 88.164,
+      "max_ms": 295.349,
+      "failures": 0,
+      "database_errors": 0
+    },
+    "samples": [
+      {
+        "stage_concurrent_sessions": 1,
+        "wave": "rapid_parallel_same_session",
+        "sequence": 0,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 46,
+        "usage_source": "simulation",
+        "elapsed_ms": 88.164
+      },
+      {
+        "stage_concurrent_sessions": 1,
+        "wave": "rapid_parallel_same_session",
+        "sequence": 1,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 52,
+        "usage_source": "simulation",
+        "elapsed_ms": 186.943
+      },
+      {
+        "stage_concurrent_sessions": 1,
+        "wave": "rapid_parallel_same_session",
+        "sequence": 2,
+        "success": true,
+        "stop_reason": "final_answer",
+        "tools": [
+          "search_faq"
+        ],
+        "runtime_execution_ms": 53,
+        "usage_source": "simulation",
+        "elapsed_ms": 295.349
+      }
+    ],
+    "messages_after_parallel": 8,
+    "per_minute_limit_rejection": "rate_limit"
+  },
+  "run_finished_utc": "2026-11-03T16:33:12.022969+00:00",
+  "case_totals": {
+    "passed": 9,
+    "failed": 0
+  }
+}
