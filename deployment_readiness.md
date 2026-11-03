@@ -4,6 +4,8 @@
 
 أرقام pytest في جدول هذا التقرير تخص تشغيل مراجعة الجاهزية الأصلية (207 نجاحًا). أُعيد تشغيل المجموعة الكاملة بعد ذلك في `reports/capstone_final_audit.md`: **325 ناجحًا، 0 فاشل، و2 متجاوزان**. احتفاظ هذا التقرير بالرقم السابق يسجل نتيجة تشغيله وقتها ولا يمثل آخر نتيجة.
 
+**تحديث نشر لاحق:** رُفع المشروع إلى [GitHub](https://github.com/f5551/smartsupport-ai) على `main` بالالتزام `dc004c60fe98d4dd4498e1e993185329082b169d`. فشل CI الأول عند تثبيت Python 3.13.7 على Ubuntu 26.04؛ نُقل runner إلى Ubuntu 24.04 لإعادة التشغيل. لا يزال Render غير منشور ولا يوجد رابط تجربة.
+
 ## الملفات
 
 أضيفت: `runtime_policy.py`، `render.yaml`، `.python-version`، `release_check.py`، `tests/test_deployment.py`، `.github/workflows/linux-preflight.yml`، `LICENSE` وهذا التقرير.

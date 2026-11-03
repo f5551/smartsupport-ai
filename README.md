@@ -39,7 +39,7 @@ Fake OpenAI لا يستهلك الحصة الحقيقية. هذا ليس عدا�
 
 مشروع تخرج لوكيل ذكاء اصطناعي واحد يخدم عملاء متجر إلكترونيات افتراضي باستخدام Python وOpenAI API وMCP وSQLite وStreamlit.
 
-**الحالة الحالية: تجهيز GitHub وRender للمراجعة قبل النشر.** الإصدارات: **`streamlit==1.66.1`** و**`openai==2.54.0`** و**`mcp==1.27.2`**، مع Python **3.13.7**. Demo لا يحتاج مفتاحًا؛ Render يفرض Demo في الخادم حتى مع رايات Live المحلية. الآثار الثلاثة الأصلية محفوظة وموسومة كمحاكاة. يوجد قياس سابق لمهمة OpenAI واحدة في `traces/live_success_1.jsonl`؛ لم يُنفذ طلب API في هذا التدقيق. لم يُرفع المشروع إلى GitHub ولم يُنشر، ولا يوجد رابط عام مختبر. راجع [تقرير الجاهزية](deployment_readiness.md) و[المراجعة النهائية](reports/capstone_final_audit.md).
+**الحالة الحالية: منشور في GitHub، وغير منشور على Render.** الإصدارات: **`streamlit==1.66.1`** و**`openai==2.54.0`** و**`mcp==1.27.2`**، مع Python **3.13.7**. Demo لا يحتاج مفتاحًا؛ إعداد Render يقفل Live. الآثار الثلاثة الأصلية محفوظة وموسومة كمحاكاة. يوجد قياس سابق لمهمة OpenAI واحدة في `traces/live_success_1.jsonl`؛ لم يُنفذ طلب API في هذا التدقيق. راجع [مستودع GitHub](https://github.com/f5551/smartsupport-ai) و[تقرير الجاهزية](deployment_readiness.md) و[المراجعة النهائية](reports/capstone_final_audit.md).
 
 ## واجهة SmartSupport AI SaaS 3.0
 
@@ -466,33 +466,11 @@ Render يوسّع `$PORT` داخل أمر التشغيل؛ هذا الأمر م�
 
 ### مراجعة الإصدار وGitHub
 
-أضيف ترخيص MIT. لا يوجد مستودع Git مهيأ أو remote مضاف في هذا التسليم. قبل الرفع راجع الملفات والصورة الموجودة والسجلات الثلاثة؛ الفاحص يستعمل مستودع Git مؤقتًا لقراءة `.gitignore` دون تهيئة المشروع. يستبعد البيئة والقواعد وملفات الموافقة والسجلات العامة، ويسمح فقط بآثار الكابستون الثلاثة المنقحة. فحص الأنماط لا يضمن اكتشاف كل أنواع الأسرار، والملفات الثنائية تتطلب مراجعة بصرية؛ لقطة الواجهة الحالية محلية ببيانات Demo.
+أضيف ترخيص MIT. رُفع المشروع إلى مستودع GitHub العام في `main` بالالتزام `dc004c60fe98d4dd4498e1e993185329082b169d`. فحص `release_check.py` يستعمل Git index مؤقتًا لمراجعة `.gitignore`، ويستبعد البيئة والقواعد والسجلات التشغيلية، ويسمح فقط بآثار الكابستون الثلاثة المنقحة. فحص الأنماط لا يضمن اكتشاف كل أنواع الأسرار، والملفات الثنائية تتطلب مراجعة بصرية؛ الصور المرفوعة محلية ببيانات Demo اصطناعية.
 
-```powershell
-Set-Location C:\Users\HP\Desktop\SmartSupport\smartsupport-ai
-.\.venv\Scripts\python.exe release_check.py
-.\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe mcp_client_test.py
-```
+تشغيل CI الأول فشل لأن Python 3.13.7 غير متاح على Ubuntu 26.04؛ ثُبّت runner على Ubuntu 24.04 مع نسخة Python نفسها، ويجري التحقق من تشغيل Actions الجديد. Workflow يشغّل الاختبارات وعميل MCP وفاحص الإصدار دون مفتاح أو خطوة نشر. اختبار Linux الخاص بالصلاحيات يتجاوز على Windows.
 
-بعد مراجعتك وموافقتك على الرفع، أنشئ مستودع GitHub فارغًا دون README/ترخيص إضافيين، ثم نفذ بنفسك (استبدل `YOUR_ACCOUNT`):
-
-```powershell
-git init -b main
-git add .
-git status --short
-git diff --cached --stat
-git diff --cached
-# توقف للمراجعة: يجب ألا توجد .env أو قواعد محلية أو سجلات خاصة.
-git commit -m "Prepare SmartSupport AI public demo"
-git remote add origin https://github.com/YOUR_ACCOUNT/smartsupport-ai.git
-git push -u origin main
-```
-
-لا تنفذ الرفع قبل إقرار قائمة الملفات. Workflow `.github/workflows/linux-preflight.yml` يشغّل Python 3.13.7 والاختبارات وعميل MCP وفاحص الإصدار على Ubuntu دون مفتاح. وجوده ليس نتيجة CI ناجحة؛ يجب انتظار التنفيذ الفعلي. اختبار Linux الخاص بالصلاحيات متجاوز على Windows. لا توجد خطوة نشر أو أسرار GitHub في workflow.
-
-بعد نجاح CI وموافقتك على النشر: في Render اختر **New → Blueprint**، اربط المستودع واختر `render.yaml` في الجذر، وراجع خطة Free ومتغيرات البيئة وأمر التشغيل. لا تضف API key. عطّل النشر التلقائي كما في الملف (`autoDeployTrigger: off`) ثم وافق على الإنشاء اليدوي. بعد البناء اختبر `https://YOUR_SERVICE.onrender.com/_stcore/health`، وافتح نافذتين مستقلتين لاختبار العزل والموافقة والرفض وغياب Live. احفظ الرابط الحقيقي هنا فقط بعد التحقق منه. **روابط GitHub وRender العامة: لم تُنشأ بعد.**
+النشر على Render لم يحدث. قبل نشر Demo اطلب مراجعة منفصلة، ثم اختر **New → Blueprint** للمستودع، وراجع خطة Free والمتغيرات وأمر التشغيل. لا تضف API key. النشر التلقائي معطل. بعد نشر مصرح به، اختبر health والعزل والموافقة والرفض وغياب Live، ثم أضف رابط الخدمة الفعلي بعد التحقق منه.
 
 ## اتصال OpenAI وشهادات TLS
 
