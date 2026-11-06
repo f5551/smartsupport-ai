@@ -1,0 +1,7 @@
+# Preserve the historical byte fingerprints recorded on Windows on every OS.
+traces/explicit_failure.jsonl text eol=crlf
+traces/near_failure_recovery.jsonl text eol=crlf
+traces/success_1.jsonl text eol=crlf
+reports/live_acceptance_raw.json text eol=crlf
+reports/live_acceptance_recovery_raw.json text eol=crlf
+reports/ticket_retest_dd43cfb703db46edba7be2c308887753.json text eol=crlf

@@ -19,7 +19,8 @@ jobs:
         with:
           python-version-file: .python-version
           cache: pip
-      - run: pip install -r requirements.txt
+      # PDF secret-scanning tests need an explicit extractor on a clean runner.
+      - run: pip install -r requirements.txt pypdf==7.0.0
       - run: python -m pip check
       - run: python release_check.py
       - run: python -m pytest -q

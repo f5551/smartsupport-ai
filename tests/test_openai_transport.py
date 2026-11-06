@@ -3,6 +3,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import ssl
+from types import SimpleNamespace
 
 import pytest
 
@@ -36,7 +37,8 @@ def test_trust_source_is_platform_specific(monkeypatch, platform):
     def create(**kwargs):
         calls.append(kwargs)
         return original(**kwargs)
-    monkeypatch.setattr(transport.sys, "platform", platform)
+    # Isolate our branch selection from stdlib ssl's actual host platform.
+    monkeypatch.setattr(transport, "sys", SimpleNamespace(platform=platform))
     monkeypatch.setattr(transport.ssl, "create_default_context", create)
     # Uncached invocation avoids changing the process-wide cached context.
     context = transport._shared_ssl_context.__wrapped__()
