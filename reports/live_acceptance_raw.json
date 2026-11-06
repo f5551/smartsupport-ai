@@ -1,0 +1,88 @@
+{
+  "results": [
+    {
+      "id": "shipping",
+      "status": "FAIL",
+      "stop_reason": "max_turns",
+      "tools": [
+        "search_faq"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1679,
+      "output_tokens": 66,
+      "cached_tokens": 0,
+      "cost_usd": "0.00155625",
+      "answer": "بلغت المهمة حد الجولات؛ لم تُنفذ أدوات الجولة الأخيرة.",
+      "api_requests": 2
+    },
+    {
+      "id": "order_status",
+      "status": "FAIL",
+      "stop_reason": "max_turns",
+      "tools": [
+        "get_order_status"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1574,
+      "output_tokens": 54,
+      "cached_tokens": 0,
+      "cost_usd": "0.0014235",
+      "answer": "بلغت المهمة حد الجولات؛ لم تُنفذ أدوات الجولة الأخيرة.",
+      "api_requests": 2
+    },
+    {
+      "id": "create_ticket",
+      "status": "FAIL",
+      "stop_reason": "max_turns",
+      "tools": [
+        "create_ticket"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1662,
+      "output_tokens": 82,
+      "cached_tokens": 0,
+      "cost_usd": "0.0016155",
+      "answer": "بلغت المهمة حد الجولات؛ لم تُنفذ أدوات الجولة الأخيرة.",
+      "api_requests": 2
+    },
+    {
+      "id": "memory_followup",
+      "status": "FAIL",
+      "stop_reason": "max_turns",
+      "tools": [
+        "load_memory"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1583,
+      "output_tokens": 34,
+      "cached_tokens": 0,
+      "cost_usd": "0.00134025",
+      "answer": "بلغت المهمة حد الجولات؛ لم تُنفذ أدوات الجولة الأخيرة.",
+      "api_requests": 2
+    },
+    {
+      "id": "ambiguous",
+      "status": "PASS",
+      "stop_reason": "final_answer",
+      "tools": [],
+      "mcp_verified": false,
+      "input_tokens": 740,
+      "output_tokens": 35,
+      "cached_tokens": 0,
+      "cost_usd": "0.0007125",
+      "answer": "أكيد، لكن أحتاج رقم الطلب المحدد لأتحقق من حالته.  \nإذا أرسلت رقم الطلب الآخر، أتابعه لك مباشرة.",
+      "api_requests": 1
+    }
+  ],
+  "settled_count": 1,
+  "average_settled_cost_usd": "0.0007125",
+  "ledger_after": {
+    "day": "2026-11-04",
+    "timezone": "Asia/Riyadh",
+    "committed_usd": "0.01056525",
+    "unresolved_requests": 1
+  },
+  "prior_unknown_usd": "0.002445",
+  "task_cap_usd": "0.0045",
+  "total_cap_usd": "0.025"
+}

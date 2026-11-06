@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "checks": {
+    "expected_mcp": true,
+    "clarification": true,
+    "final_answer": true,
+    "settled_usage": true,
+    "within_turns": true,
+    "within_budget": true
+  },
+  "stop_reason": "final_answer",
+  "answer": "أحتاج رقم الطلب حتى أتحقق من حالته. أرسل لي رقم الطلب الآخر.",
+  "tools": [],
+  "input_tokens": 740,
+  "output_tokens": 23,
+  "cached_tokens": 0,
+  "cost_usd": "0.0006585",
+  "known_cost_usd": "0.0006585",
+  "generation_requests": 1,
+  "count_requests": 1,
+  "provider_usage": [
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 740,
+      "input_tokens": 740,
+      "output_tokens": 23,
+      "cached_tokens": 0,
+      "cost_usd": "0.0006585",
+      "reserved_upper_usd": "0.000987"
+    }
+  ],
+  "errors": [],
+  "usage_complete": true,
+  "audit_events": 4
+}

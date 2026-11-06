@@ -15,8 +15,6 @@ import pytest
 from daily_cost import DailyCostLedger
 from web_controls import WebError
 from web_runtime import WebBackend
-
-
 @pytest.fixture(autouse=True)
 def no_paid_provider(monkeypatch):
     monkeypatch.setattr('web_runtime.AsyncOpenAI',lambda **kw: pytest.fail('Paid API forbidden'))
@@ -446,7 +444,7 @@ def test_streamlit_resource_restart_restores_context_without_running_worker(tmp_
     finally:get_web_backend.clear()
 
 
-def test_new_streamlit_session_needs_explicit_secret_to_restore(tmp_path,worker,monkeypatch):
+def test_new_direct_demo_session_cannot_restore_another_browser_context(tmp_path,worker,monkeypatch):
     from streamlit.testing.v1 import AppTest
     from web_ui import get_web_backend
     root=Path(__file__).resolve().parents[1]
@@ -456,19 +454,13 @@ def test_new_streamlit_session_needs_explicit_secret_to_restore(tmp_path,worker,
     try:
         first=AppTest.from_file(str(root/'app.py'),default_timeout=30).run()
         first.chat_input[0].set_value('رسالة خاصة بجلسة ألف').run()
-        visitor,secret,cid=(first.session_state[k] for k in ('visitor','recovery_secret','conversation'))
+        visitor,cid=(first.session_state[k] for k in ('visitor','conversation'))
         get_web_backend.clear()
         second=AppTest.from_file(str(root/'app.py'),default_timeout=30).run()
-        assert second.session_state['visitor']!=visitor and second.session_state['messages']==[]
-        second.text_input(key='restore_id').set_value(visitor)
-        second.text_input(key='restore_secret').set_value('0'*64)
-        next(b for b in second.button if b.label=='استعادة دون تنفيذ مهام').click().run()
-        assert second.session_state['visitor']!=visitor and second.session_state['messages']==[]
-        second.text_input(key='restore_secret').set_value(secret)
-        next(b for b in second.button if b.label=='استعادة دون تنفيذ مهام').click().run()
         assert not second.exception
-        assert second.session_state['visitor']==visitor and second.session_state['conversation']==cid
-        assert 'رسالة خاصة بجلسة ألف' in str(second.session_state['messages'])
+        assert second.session_state['visitor'] != visitor
+        assert second.session_state['conversation'] != cid
+        assert 'رسالة خاصة بجلسة ألف' not in str(second.session_state['messages'])
     finally:get_web_backend.clear()
 
 

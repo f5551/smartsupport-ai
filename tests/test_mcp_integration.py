@@ -9,11 +9,12 @@ import json
 import sqlite3
 import subprocess
 import sys
+from contextlib import closing
 
 import pytest
 
-from approval_store import issue_approval
 import database
+from approval_store import issue_approval
 from mcp_client_test import EXPECTED_TOOLS, ROOT, mcp_connection, smoke_test
 
 C1 = "demo_customer_001"
@@ -168,7 +169,7 @@ def test_expired_and_unknown_grants_are_denied(db_path, tmp_path):
     approval_db = tmp_path / "approvals.sqlite3"
     arguments = {"content": "expired content"}
     approval_id = grant(approval_db, "save_memory", arguments)
-    with sqlite3.connect(approval_db) as connection:
+    with closing(sqlite3.connect(approval_db)) as connection, connection:
         connection.execute("UPDATE write_approvals SET expires_at=?", (0,))
 
     async def scenario():

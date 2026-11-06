@@ -1,0 +1,189 @@
+{
+  "scope": "DemoOpenAI + real MCP, temporary SQLite; no paid API",
+  "cases": [
+    {
+      "id": "FAQ-01",
+      "category": "FAQ",
+      "messages": [
+        "كم تستغرق مدة الشحن؟"
+      ],
+      "reference_facts": "FAQ-001: 2 إلى 5 أيام عمل بعد تأكيد الطلب",
+      "expected_tools": [
+        "search_faq"
+      ],
+      "expected_behavior": "عرض سياسة الشحن دون اختراع موعد محدد",
+      "oracle": "faq",
+      "faq": "FAQ-001",
+      "result": "Pass",
+      "judgment_reason": "النص المرجعي موجود والأداة search_faq مؤكدة",
+      "actual_steps": [
+        {
+          "message": "مدة الشحن التجريبية من 2 إلى 5 أيام عمل بعد تأكيد الطلب. (المصدر: FAQ-001)\n\nرسوم الشحن الافتراضية 20 ريالًا، والشحن مجاني للطلبات من 300 ريال قبل أي رسوم إضافية معلنة. (المصدر: FAQ-004)\n\nتحقق من حالة الطلب. إذا تجاوزت المدة الافتراضية 5 أيام عمل بعد التأكيد، يمكنك طلب تذكرة متابعة بعد الموافقة. (المصدر: FAQ-007)",
+          "stop_reason": "final_answer",
+          "tools_used": [
+            "search_faq"
+          ],
+          "activity": [
+            {
+              "tool_name": "search_faq",
+              "status": "success",
+              "duration_ms": 33,
+              "error_code": null
+            }
+          ],
+          "usage_source": null,
+          "estimated_cost_usd": "0.000008"
+        }
+      ],
+      "actual_tools": [
+        "search_faq"
+      ],
+      "error": null,
+      "database_before": {
+        "tickets": 3,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "database_after": {
+        "tickets": 3,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "duplicate_decision_result": null,
+      "mcp_successes": 1,
+      "model_request_count_simulated": 2,
+      "duration_ms": 2996.63,
+      "execution": "DemoOpenAI + real MCP + SQLite",
+      "real_execution": "NOT EXECUTED; new explicit permission required",
+      "real_cost_usd": null
+    },
+    {
+      "id": "ORD-01",
+      "category": "orders",
+      "messages": [
+        "ما حالة الطلب DEMO-1001؟"
+      ],
+      "reference_facts": "demo_customer_001 owns DEMO-1001; status=shipped",
+      "expected_tools": [
+        "get_order_status"
+      ],
+      "expected_behavior": "إرجاع الحالة الصحيحة للطلب المملوك",
+      "oracle": "order",
+      "status": "قيد الشحن",
+      "result": "Pass",
+      "judgment_reason": "الحالة تطابق fixture ولم تتغير البيانات",
+      "actual_steps": [
+        {
+          "message": "الطلب DEMO-1001؛ الحالة: قيد الشحن.",
+          "stop_reason": "final_answer",
+          "tools_used": [
+            "get_order_status"
+          ],
+          "activity": [
+            {
+              "tool_name": "get_order_status",
+              "status": "success",
+              "duration_ms": 38,
+              "error_code": null
+            }
+          ],
+          "usage_source": null,
+          "estimated_cost_usd": "0.000008"
+        }
+      ],
+      "actual_tools": [
+        "get_order_status"
+      ],
+      "error": null,
+      "database_before": {
+        "tickets": 3,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "database_after": {
+        "tickets": 3,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "duplicate_decision_result": null,
+      "mcp_successes": 1,
+      "model_request_count_simulated": 2,
+      "duration_ms": 2820.69,
+      "execution": "DemoOpenAI + real MCP + SQLite",
+      "real_execution": "NOT EXECUTED; new explicit permission required",
+      "real_cost_usd": null
+    },
+    {
+      "id": "CMP-01",
+      "category": "complaints",
+      "messages": [
+        "إنشاء شكوى للطلب DEMO-1002 بسبب عطل الشاشة",
+        "[زر التطبيق: موافقة]"
+      ],
+      "reference_facts": "3 تذاكر في fixture؛ الطلب مملوك؛ الموافقة مرتبطة بالعملية",
+      "expected_tools": [
+        "create_ticket"
+      ],
+      "expected_behavior": "لا كتابة قبل الموافقة؛ بعدها تذكرة واحدة فقط ورفض القرار المكرر",
+      "oracle": "approved",
+      "action": "approve",
+      "repeat": true,
+      "result": "Pass",
+      "judgment_reason": "تذكرة واحدة فقط بعد الموافقة؛ إعادة القرار رُفضت",
+      "actual_steps": [
+        {
+          "message": "العملية جاهزة للمراجعة؛ لم تُنفذ. يلزم تأكيدك الصريح في التطبيق.",
+          "stop_reason": "pending_approval",
+          "tools_used": [],
+          "activity": [],
+          "usage_source": null,
+          "estimated_cost_usd": "0.000004"
+        },
+        {
+          "message": "التذكرة TKT-d5c99093ee5d4f6aa0d5baf6ab80e3de؛ الحالة: مفتوحة.",
+          "stop_reason": "final_answer",
+          "tools_used": [
+            "create_ticket"
+          ],
+          "activity": [
+            {
+              "tool_name": "create_ticket",
+              "status": "success",
+              "duration_ms": 47,
+              "error_code": null
+            }
+          ],
+          "usage_source": null,
+          "estimated_cost_usd": "0.000008"
+        }
+      ],
+      "actual_tools": [
+        "create_ticket"
+      ],
+      "error": null,
+      "database_before": {
+        "tickets": 3,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "database_after": {
+        "tickets": 4,
+        "orders": 10,
+        "memories": 0,
+        "integrity": "ok"
+      },
+      "duplicate_decision_result": "already_handled",
+      "mcp_successes": 1,
+      "model_request_count_simulated": 2,
+      "duration_ms": 2965.44,
+      "execution": "DemoOpenAI + real MCP + SQLite",
+      "real_execution": "NOT EXECUTED; new explicit permission required",
+      "real_cost_usd": null
+    }
+  ]
+}

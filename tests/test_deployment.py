@@ -1,9 +1,7 @@
 """Deployment preflight: isolated stores and actual subprocess protocols, no API."""
-from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import json
 import os
-from pathlib import Path
 import socket
 import sqlite3
 import subprocess
@@ -11,18 +9,20 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
 from config import ROOT
-from database import init_database, seed_demo_data, connect, get_order_status
+from database import connect, get_order_status, init_database, seed_demo_data
+from mcp_client_test import smoke_test
+from mcp_transport import TrustedSession
 from release_check import check_release, distributable_files, secret_findings
 from runtime_policy import public_demo_only, web_data_directory, worker_limit
 from web_controls import WebError
-from web_runtime import WebBackend, AgentWorker
-from mcp_transport import TrustedSession
-from mcp_client_test import smoke_test
+from web_runtime import AgentWorker, WebBackend
 from web_ui import get_web_backend
 
 
@@ -57,8 +57,9 @@ def test_public_ui_ignores_live_and_identity_query_parameters(public, tmp_path, 
         ui.query_params["customer_id"] = "arbitrary"
         ui.run()
         assert not ui.exception
-        assert ui.selectbox(key="mode").options == ["Demo"]
-        assert len(ui.selectbox(key="customer").options) == 5
+        assert ui.selectbox(key="mode").options == ["محاكاة آمنة"]
+        assert ui.selectbox(key="mode").value == "Demo"
+        assert not any(s.key=="customer" for s in ui.selectbox)
     finally:
         get_web_backend.clear()
 
@@ -113,7 +114,7 @@ def test_concurrent_public_visitors_writes_and_memory_are_isolated(public, tmp_p
                 service.view(own[0], other[1])
         for pair, marker, forbidden in [(first, "زائر ألف", "زائر باء"), (second, "زائر باء", "زائر ألف")]:
             directory = service.conversations[pair[1]].directory
-            with sqlite3.connect(directory / "store.sqlite3") as db:
+            with closing(sqlite3.connect(directory / "store.sqlite3")) as db:
                 assert db.execute("SELECT count(*) FROM tickets").fetchone()[0] == 4
                 assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
                 assert db.execute("PRAGMA foreign_key_check").fetchall() == []
@@ -216,6 +217,7 @@ def test_gitignore_excludes_runtime_and_preserves_only_reviewed_traces(tmp_path)
     paths = [".env", ".env.example", ".envrc", ".venv/secret", "a/__pycache__/x.pyc", ".pytest_cache/x",
              "data/private.sqlite3", "data/private.sqlite3-wal", "audit.jsonl", ".streamlit/secrets.toml",
              "secret.pem", "secret.p12", "secret.pfx", "cache.tmp", "backup.bak", "smartsupport-ai.zip",
+             "smartsupport-ai.rar",
              "traces/unreviewed.jsonl", "traces/success_1.jsonl", "app.py"]
     for relative in paths:
         path = tmp_path / relative
@@ -232,7 +234,88 @@ def test_secret_scan_detects_unknown_key_without_disclosing_it():
 
 
 def test_release_text_and_capstone_traces_are_clean():
-    assert check_release()["findings"] == []
+    report = check_release()
+    assert report["findings"] == []
+
+
+def _pdf_fixture(text):
+    """Small real text PDF, including xref offsets, with no optional test packages."""
+    escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    stream = ("BT /F1 10 Tf 40 700 Td (" + escaped + ") Tj ET").encode("ascii")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Length " + str(len(stream)).encode() + b" >>\nstream\n" + stream + b"\nendstream",
+    ]
+    document = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"
+    offsets = []
+    for index, body in enumerate(objects, 1):
+        offsets.append(len(document))
+        document += str(index).encode() + b" 0 obj\n" + body + b"\nendobj\n"
+    xref = len(document)
+    document += b"xref\n0 6\n0000000000 65535 f \n"
+    document += b"".join(f"{offset:010d} 00000 n \n".encode() for offset in offsets)
+    return document + b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + str(xref).encode() + b"\n%%EOF\n"
+
+
+def _release_fixture(tmp_path, pdf):
+    (tmp_path / "document.pdf").write_bytes(pdf)
+    (tmp_path / "traces").mkdir()
+    for name in ("success_1.jsonl", "near_failure_recovery.jsonl", "explicit_failure.jsonl"):
+        (tmp_path / "traces" / name).write_bytes((ROOT / "traces" / name).read_bytes())
+
+
+@pytest.mark.parametrize("contains_secret", [False, True])
+def test_release_extracts_real_pdf_and_detects_secret_without_disclosing_it(tmp_path, contains_secret):
+    key = "sk-proj-" + "Z" * 40
+    _release_fixture(tmp_path, _pdf_fixture(key if contains_secret else "Synthetic public capstone document"))
+    report = check_release(tmp_path)
+    assert report["pdf_files_scanned"] == 1
+    if contains_secret:
+        assert any(finding["path"] == "document.pdf" and finding["rule"] == "openai_key"
+                   for finding in report["findings"])
+    else:
+        assert report["findings"] == []
+    assert key not in json.dumps(report)
+
+
+@pytest.mark.parametrize("pdf", [b"not a readable PDF", _pdf_fixture("")], ids=["damaged", "no-extractable-text"])
+def test_release_unreadable_pdf_fails_with_safe_diagnostic(tmp_path, pdf):
+    _release_fixture(tmp_path, pdf)
+    report = check_release(tmp_path)
+    assert report["pdf_files_scanned"] == 0
+    assert len(report["findings"]) == 1
+    finding = report["findings"][0]
+    assert finding["path"] == "document.pdf" and finding["rule"] == "pdf_scan_failed"
+    assert finding["message"]
+
+
+def test_release_missing_pdf_extractor_is_a_failure_not_a_silent_skip(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pypdf", None)
+    monkeypatch.setattr("release_check.shutil.which", lambda name: None)
+    _release_fixture(tmp_path, _pdf_fixture("Synthetic public document"))
+    report = check_release(tmp_path)
+    assert report["findings"][0]["rule"] == "pdf_scan_failed"
+    assert "install Poppler pdftotext" in report["findings"][0]["message"]
+
+
+def test_release_pdf_extraction_timeout_fails_closed(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pypdf", None)
+    original = subprocess.run
+    monkeypatch.setattr("release_check.shutil.which", lambda name: "synthetic-pdf-extractor")
+
+    def timeout(command, **kwargs):
+        if command[0] == "synthetic-pdf-extractor":
+            raise subprocess.TimeoutExpired(command, 20)
+        return original(command, **kwargs)
+
+    monkeypatch.setattr("release_check.subprocess.run", timeout)
+    _release_fixture(tmp_path, _pdf_fixture("Synthetic public document"))
+    assert check_release(tmp_path)["findings"] == [{
+        "path": "document.pdf", "rule": "pdf_scan_failed", "message": "PDF text extraction could not complete",
+    }]
 
 
 def test_blueprint_commands_and_python_pin():

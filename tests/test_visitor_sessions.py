@@ -1,15 +1,14 @@
 """Visitor expiry is tested with a monotonic clock, never real-time sleeps/API."""
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
-import hashlib
-import sqlite3
+from dataclasses import replace
 from threading import Event, Thread
 from types import SimpleNamespace
-from dataclasses import replace
 
 import pytest
 
-from web_controls import WebError, WebControls
+from web_controls import WebControls, WebError
 from web_runtime import WebBackend
 
 

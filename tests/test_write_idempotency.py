@@ -1,18 +1,20 @@
 """Crash and concurrency checks for the separate approval/store ledgers."""
-from concurrent.futures import ThreadPoolExecutor
 import sqlite3
 import subprocess
 import sys
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 
 import pytest
 
-from approval_store import (
-    WriteOperationPending, issue_approval, reconcile_operation,
-)
 import database
 import mcp_server
-
+from approval_store import (
+    WriteOperationPending,
+    issue_approval,
+    reconcile_operation,
+)
 
 CUSTOMER = "demo_customer_001"
 SESSION = "idempotency-test-session"
@@ -84,7 +86,7 @@ def test_crash_before_store_commit_requires_new_approval(db_path, tmp_path, monk
     with pytest.raises(ValueError):
         mcp_server.execute_approved_write(context, "create_ticket", ARGS, approval)
     assert ticket_count(db_path) == 3
-    with sqlite3.connect(approvals) as connection:
+    with closing(sqlite3.connect(approvals)) as connection, connection:
         assert connection.execute("SELECT status FROM write_operations").fetchone()[0] == "failed"
 
     monkeypatch.setattr(database, "create_ticket", original)
@@ -117,7 +119,7 @@ os._exit(23)
 
     # Startup reconciliation observes an active lease and does not replay it.
     restarted = mcp_server.DemoSession(CUSTOMER, SESSION, db_path, approvals)
-    with sqlite3.connect(approvals) as connection:
+    with closing(sqlite3.connect(approvals)) as connection, connection:
         assert connection.execute("SELECT status FROM write_operations").fetchone()[0] == "pending"
         connection.execute("UPDATE write_operations SET lease_until=0")
 

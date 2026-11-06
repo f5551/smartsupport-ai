@@ -288,10 +288,11 @@ def consume_approval(
                         "customer_id": customer_id, "session_id": session_id,
                         "tool": tool, "payload_hash": fingerprint}
         # Reconcile outside the approval transaction, then re-read both ledgers.
-        state = reconcile_operation(approval_db, store_db, key)["status"]
+        reconciled = reconcile_operation(approval_db, store_db, key)
+        state = reconciled["status"]
         if state == "committed":
             return {"state": "committed", "idempotency_key": key,
-                    "result": reconcile_operation(approval_db, store_db, key)["result"]}
+                    "result": reconciled["result"]}
         if state == "pending":
             raise WriteOperationPending("Operation is still in progress")
         if state == "unknown":

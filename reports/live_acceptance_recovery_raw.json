@@ -1,0 +1,60 @@
+{
+  "results": [
+    {
+      "id": "shipping",
+      "status": "PASS",
+      "stop_reason": "final_answer",
+      "tools": [
+        "search_faq"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1677,
+      "output_tokens": 42,
+      "cached_tokens": 0,
+      "cost_usd": "0.00144675",
+      "answer": "مدة الشحن: من 2 إلى 5 أيام عمل بعد تأكيد الطلب.",
+      "api_requests": 2
+    },
+    {
+      "id": "order_status",
+      "status": "PASS",
+      "stop_reason": "final_answer",
+      "tools": [
+        "get_order_status"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1574,
+      "output_tokens": 43,
+      "cached_tokens": 0,
+      "cost_usd": "0.0013740",
+      "answer": "الطلب DEMO-1001؛ الحالة: قيد الشحن.",
+      "api_requests": 2
+    },
+    {
+      "id": "memory_followup",
+      "status": "PASS",
+      "stop_reason": "final_answer",
+      "tools": [
+        "load_memory"
+      ],
+      "mcp_verified": true,
+      "input_tokens": 1583,
+      "output_tokens": 32,
+      "cached_tokens": 0,
+      "cost_usd": "0.00133125",
+      "answer": "المحفوظ لك: **يفضل العميل التواصل بالعربية**.",
+      "api_requests": 2
+    }
+  ],
+  "settled_count": 3,
+  "average_settled_cost_usd": "0.00138400",
+  "ledger_after": {
+    "day": "2026-11-04",
+    "timezone": "Asia/Riyadh",
+    "committed_usd": "0.0196215",
+    "unresolved_requests": 1
+  },
+  "prior_unknown_usd": "0.002445",
+  "task_cap_usd": "0.003",
+  "total_cap_usd": "0.025"
+}

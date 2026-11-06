@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "checks": {
+    "existing_live_pytest": true,
+    "search_faq_success": true,
+    "final_answer": true,
+    "settled_usage": true,
+    "within_turns": true,
+    "within_budget": true
+  },
+  "stop_reason": "final_answer",
+  "answer": "مدة الشحن التجريبية: من 2 إلى 5 أيام عمل بعد تأكيد الطلب.",
+  "tools": [
+    "search_faq"
+  ],
+  "input_tokens": 1692,
+  "output_tokens": 48,
+  "cached_tokens": 0,
+  "cost_usd": "0.00148500",
+  "known_cost_usd": "0.00148500",
+  "generation_requests": 2,
+  "count_requests": 2,
+  "provider_usage": [
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 747,
+      "input_tokens": 747,
+      "output_tokens": 24,
+      "cached_tokens": 0,
+      "cost_usd": "0.00066825",
+      "reserved_upper_usd": "0.00099225"
+    },
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 945,
+      "input_tokens": 945,
+      "output_tokens": 24,
+      "cached_tokens": 0,
+      "cost_usd": "0.00081675",
+      "reserved_upper_usd": "0.00114075"
+    }
+  ],
+  "errors": [],
+  "usage_complete": true,
+  "audit_events": 8
+}

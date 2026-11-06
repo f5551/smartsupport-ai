@@ -1,17 +1,16 @@
 import asyncio
+import json
+import os
+import subprocess
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from decimal import Decimal
-import json
-import os
-import sqlite3
-import subprocess
-import sys
 
 import pytest
 
-from agent import Agent, SYSTEM_PROMPT
-from config import AgentConfig, ROOT
+from agent import SYSTEM_PROMPT, Agent
+from config import ROOT, AgentConfig
 from daily_cost import DailyCostLedger
 from fake_openai import FakeOpenAI, fake_response, tool_call
 from tests.test_agent import CONTEXT, FakeMCP, settings
@@ -105,8 +104,9 @@ def test_concurrent_request_id_executes_once_and_rejects_rebinding():
         client=FakeOpenAI([fake_response('جواب')]);agent=Agent(client,FakeMCP(),CONTEXT,settings())
         results=await asyncio.gather(*(agent.run('سؤال',request_id='trusted-submit-1') for _ in range(8)))
         assert len(client.requests)==1 and len({r.task_id for r in results})==1
+        original_message=results[0].message
         results[0].message='changed'
-        assert (await agent.run('سؤال',request_id='trusted-submit-1')).message=='جواب'
+        assert (await agent.run('سؤال',request_id='trusted-submit-1')).message==original_message
         with pytest.raises(ValueError):await agent.run('different',request_id='trusted-submit-1')
     asyncio.run(scenario())
 
@@ -203,7 +203,7 @@ def test_unknown_api_usage_stays_reserved_and_is_not_retried(tmp_path):
 
 
 def test_audit_failure_cancels_only_known_unsent_daily_reservation(tmp_path):
-    from audit_logger import AuditLogger,AuditError
+    from audit_logger import AuditError, AuditLogger
     class BrokenAudit(AuditLogger):
         def emit(self,**fields):
             if fields['event_type']=='model_request':raise AuditError('test failure')

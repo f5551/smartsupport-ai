@@ -10,8 +10,6 @@ from config import ROOT
 from ui.components import budget_values
 from ui.styles import font_css
 from web_ui import get_web_backend
-
-
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
     monkeypatch.setenv("SMARTSUPPORT_WEB_DATA_DIR", str(tmp_path))

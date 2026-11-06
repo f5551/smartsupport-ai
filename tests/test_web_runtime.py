@@ -1,11 +1,22 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
+import secrets
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 
 import pytest
 
+from auth_store import AuthStore
 from web_controls import WebControls, WebError
-from web_runtime import WebBackend, CUSTOMERS
+from web_runtime import WebBackend
+
+
+def enable_operator_live(directory):
+    auth=AuthStore(directory)
+    password=secrets.token_urlsafe(24)
+    auth.create_user("local-operator",password,role="operator")
+    token,_=auth.login("local-operator",password)
+    auth.set_live_enabled(token,True)
 
 
 @pytest.fixture
@@ -22,8 +33,25 @@ def chat(backend, label="عميل تجريبي 1"):
 
 
 def ticket_count(backend, identifier):
-    with sqlite3.connect(backend.conversations[identifier].directory / "store.sqlite3") as con:
+    with closing(sqlite3.connect(backend.conversations[identifier].directory / "store.sqlite3")) as con:
         return con.execute("SELECT count(*) FROM tickets").fetchone()[0]
+
+
+def test_live_gate_closes_connection_when_settings_query_fails(backend, monkeypatch):
+    class BrokenConnection:
+        closed = False
+
+        def execute(self, statement):
+            raise sqlite3.OperationalError("synthetic settings failure")
+
+        def close(self):
+            self.closed = True
+
+    connection = BrokenConnection()
+    with monkeypatch.context() as patch:
+        patch.setattr(sqlite3, "connect", lambda *args, **kwargs: connection)
+        assert backend.live_allowed() is False
+    assert connection.closed is True
 
 
 def test_demo_reads_use_actual_mcp_and_no_paid_client(backend, monkeypatch):
@@ -134,6 +162,8 @@ def test_concurrent_decision_claims_have_one_winner(tmp_path):
 def test_live_gate_requires_operator_flag_and_local_binding(tmp_path, monkeypatch, bind, deployment, enabled, expected):
     monkeypatch.setenv("SMARTSUPPORT_DEPLOYMENT", deployment)
     monkeypatch.setenv("SMARTSUPPORT_ENABLE_LOCAL_LIVE", enabled)
+    if expected:
+        enable_operator_live(tmp_path)
     service = WebBackend(tmp_path, bind_address=bind)
     assert service.live_allowed() is expected
     visitor = service.new_visitor()
@@ -146,6 +176,7 @@ def test_live_gate_requires_operator_flag_and_local_binding(tmp_path, monkeypatc
 def test_live_configuration_failure_is_redacted_without_constructing_api_client(backend, monkeypatch):
     monkeypatch.setenv("SMARTSUPPORT_DEPLOYMENT", "local")
     monkeypatch.setenv("SMARTSUPPORT_ENABLE_LOCAL_LIVE", "1")
+    enable_operator_live(backend.directory)
     def invalid():
         raise ValueError("private credential or path must not reach UI")
     monkeypatch.setattr("web_runtime.AgentConfig.from_env", invalid)
@@ -159,6 +190,7 @@ def test_live_configuration_failure_is_redacted_without_constructing_api_client(
 def test_revoking_live_blocks_requests_but_allows_safe_demo_switch(backend, monkeypatch):
     monkeypatch.setenv("SMARTSUPPORT_DEPLOYMENT", "local")
     monkeypatch.setenv("SMARTSUPPORT_ENABLE_LOCAL_LIVE", "1")
+    enable_operator_live(backend.directory)
     visitor = backend.new_visitor()
     live = backend.new_conversation(visitor, "عميل تجريبي 1", "Live")
     monkeypatch.setenv("SMARTSUPPORT_ENABLE_LOCAL_LIVE", "0")

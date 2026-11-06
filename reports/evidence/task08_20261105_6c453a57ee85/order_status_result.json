@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "checks": {
+    "expected_mcp": true,
+    "grounded_status": true,
+    "final_answer": true,
+    "settled_usage": true,
+    "within_turns": true,
+    "within_budget": true
+  },
+  "stop_reason": "final_answer",
+  "answer": "الطلب DEMO-1001؛ الحالة: قيد الشحن.",
+  "tools": [
+    "get_order_status"
+  ],
+  "input_tokens": 1574,
+  "output_tokens": 41,
+  "cached_tokens": 0,
+  "cost_usd": "0.0013650",
+  "known_cost_usd": "0.0013650",
+  "generation_requests": 2,
+  "count_requests": 2,
+  "provider_usage": [
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 742,
+      "input_tokens": 742,
+      "output_tokens": 24,
+      "cached_tokens": 0,
+      "cost_usd": "0.0006645",
+      "reserved_upper_usd": "0.0009885"
+    },
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 832,
+      "input_tokens": 832,
+      "output_tokens": 17,
+      "cached_tokens": 0,
+      "cost_usd": "0.0007005",
+      "reserved_upper_usd": "0.001056"
+    }
+  ],
+  "errors": [],
+  "usage_complete": true,
+  "audit_events": 8
+}

@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "command": "python -m pytest -p no:cacheprovider -q tests/test_reference_ui.py tests/test_deployment.py::test_streamlit_fresh_process_health_and_no_private_file_serving",
+  "passed": 7,
+  "failed": 0,
+  "skipped": 0,
+  "duration_seconds": 56.69,
+  "paid_api_used": false
+}

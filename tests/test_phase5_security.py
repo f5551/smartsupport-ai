@@ -1,16 +1,15 @@
 import asyncio
-from decimal import Decimal
-import json
 import sqlite3
+from contextlib import closing
+from decimal import Decimal
 
 import pytest
 
+import database
 from agent import Agent
 from approval_store import issue_approval
 from audit_logger import AuditLogger
 from config import AgentConfig
-from cost_tracker import load_price
-import database
 from fake_openai import FakeOpenAI, fake_response, tool_call
 from mcp_transport import TrustedSession, mcp_connection
 
@@ -89,7 +88,7 @@ def test_approval_is_burned_when_actual_sqlite_write_fails(db_path, tmp_path):
     asyncio.run(scenario())
     with database.connect(db_path) as connection:
         assert connection.execute("SELECT count(*) FROM tickets").fetchone()[0] == 3
-    with sqlite3.connect(approvals) as connection:
+    with closing(sqlite3.connect(approvals)) as connection:
         assert connection.execute("SELECT consumed_at FROM write_approvals").fetchone()[0] is not None
 
 

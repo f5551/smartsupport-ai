@@ -19,6 +19,9 @@ build/
 dist/
 # Local full-project bundle; may contain environments and private runtime files.
 /smartsupport-ai.zip
+/smartsupport-ai.rar
+# Local archives are never part of a GitHub submission.
+/.local_archive/
 *.egg-info/
 
 # Runtime data and private audit trails
@@ -44,6 +47,9 @@ logs/
 *.p12
 *.pfx
 .runtime/
+backups/
+/data/backups/
+.backup/
 session_registry.lock
 # Local test reports can include synthetic test input values.
 /reports/evidence/*pytest*.xml
@@ -55,6 +61,13 @@ traces/*
 !traces/success_1.jsonl
 !traces/near_failure_recovery.jsonl
 !traces/explicit_failure.jsonl
+
+# Reviewed TASK 08 audit events only; keep other operational JSONL excluded.
+!reports/evidence/task08_20261105_6c453a57ee85/shipping.jsonl
+!reports/evidence/task08_20261105_6c453a57ee85/order_status.jsonl
+!reports/evidence/task08_20261105_6c453a57ee85/create_ticket.jsonl
+!reports/evidence/task08_20261105_6c453a57ee85/memory_followup.jsonl
+!reports/evidence/task08_20261105_6c453a57ee85/ambiguous.jsonl
 
 # Local editor / OS files
 .idea/

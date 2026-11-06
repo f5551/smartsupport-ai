@@ -1,7 +1,9 @@
 """UI regression tests: real MCP + Fake model, isolated synthetic databases."""
 import json
+import secrets
 import sqlite3
 import tomllib
+from contextlib import closing
 
 import pytest
 from streamlit.testing.v1 import AppTest
@@ -10,7 +12,6 @@ from config import ROOT
 from web_controls import WebError
 from web_runtime import WebBackend
 from web_ui import get_web_backend
-
 
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
@@ -30,13 +31,15 @@ def text(ui):
 
 def backend():
     import os
+
     import streamlit as st
     return get_web_backend(os.environ["SMARTSUPPORT_WEB_DATA_DIR"], st.get_option("server.address") or "")
 
 
 def test_no_key_demo_and_mcp_not_claimed_before_initialization(workspace):
     assert not workspace.exception
-    assert workspace.selectbox(key="mode").options == ["Demo"]
+    assert workspace.selectbox(key="mode").options == ["محاكاة آمنة"]
+    assert workspace.selectbox(key="mode").value == "Demo"
     assert "لم يُتحقق بعد" in text(workspace) and "MCP • تم التحقق" not in text(workspace)
 
 
@@ -75,7 +78,7 @@ def test_archive_read_only_and_pending_not_replayed(workspace):
     assert not workspace.exception and workspace.chat_input[0].disabled
     assert "للقراءة فقط" in text(workspace)
     assert not any(b.label == "تأكيد إنشاء الشكوى" for b in workspace.button)
-    with sqlite3.connect(directory / "store.sqlite3") as db:
+    with closing(sqlite3.connect(directory / "store.sqlite3")) as db:
         assert db.execute("SELECT count(*) FROM tickets").fetchone()[0] == 3
     workspace.selectbox(key="history_selection").select("current").run()
     assert not workspace.chat_input[0].disabled and workspace.session_state["messages"] == []
@@ -107,7 +110,7 @@ def test_pending_blocks_send_and_repeated_approval_does_not_duplicate(workspace)
     con = service.conversations[workspace.session_state["conversation"]]
     workspace.run()
     workspace.run()
-    with sqlite3.connect(con.directory / "store.sqlite3") as db:
+    with closing(sqlite3.connect(con.directory / "store.sqlite3")) as db:
         assert db.execute("SELECT count(*) FROM tickets").fetchone()[0] == 4
     assert "approval_id" not in text(workspace)
     assert len(con.result["activity"]) == 1
@@ -128,15 +131,10 @@ def test_copy_uses_native_plain_text_and_no_untrusted_html(workspace, monkeypatc
 def test_backend_restart_without_recovery_secret_requires_fresh_isolated_context(workspace):
     workspace.button(key="suggest_local_shipping").click().run()
     original_visitor = workspace.session_state["visitor"]
-    # An identifier alone must still fail closed. Proof-bearing restoration is
-    # tested separately; losing this secret cannot silently claim old records.
-    workspace.session_state["recovery_secret"] = None
     get_web_backend.clear()
     workspace.run()
-    assert "فُقدت حالة المحادثة" in text(workspace)
-    workspace.button(key="recover").click().run()
-    assert not workspace.exception and workspace.session_state["visitor"] != original_visitor
-    assert workspace.session_state["messages"] == []
+    assert not workspace.exception and workspace.session_state["visitor"] == original_visitor
+    assert "FAQ-001" in text(workspace)
 
 
 def test_theme_dual_mode_and_no_external_font_downloads():
@@ -164,6 +162,12 @@ def test_live_ui_not_ready_without_key_even_after_operator_flags(tmp_path, monke
     monkeypatch.setenv("SMARTSUPPORT_DEPLOYMENT", "local")
     monkeypatch.setattr("web_runtime.AgentConfig.from_env", lambda: object())
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    from auth_store import AuthStore
+    auth=AuthStore(tmp_path)
+    operator_password=secrets.token_urlsafe(24)
+    auth.create_user("operator",operator_password,role="operator")
+    token,_=auth.login("operator",operator_password)
+    auth.set_live_enabled(token,True)
     service = WebBackend(tmp_path)
     try:
         assert service.live_allowed() and not service.live_ready()

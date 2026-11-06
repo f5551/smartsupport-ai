@@ -44,7 +44,8 @@ class DemoOpenAI(FakeOpenAI):
             if "ticket_id" in data:
                 return fake_response(f"التذكرة {data['ticket_id']}؛ الحالة: {statuses.get(data['status'], data['status'])}.")
             return fake_response(f"الطلب {data['order_id']}؛ الحالة: {statuses.get(data['status'], data['status'])}.")
-        text = next(item["content"] for item in reversed(request["input"]) if item.get("role") == "user")
+        user_items = [item for item in request["input"] if item.get("role") == "user" and isinstance(item.get("content"), str)]
+        text = user_items[-1]["content"]
         text = text.split("\nالرسالة الحالية:\n")[-1]
         if text.startswith("احفظ هذا الملخص بعد موافقتي:"):
             return fake_response(calls=[tool_call("save_memory", {"content": text.split(":", 1)[1].strip()})])
@@ -54,6 +55,13 @@ class DemoOpenAI(FakeOpenAI):
         if ticket:
             return fake_response(calls=[tool_call("get_ticket_status", {"ticket_id": ticket[0]})])
         order = re.search(r"DEMO-\d{4}", text, re.I)
+        if _other_order_reference(text):
+            return fake_response("أي طلب تقصد بعبارة «طلبي الآخر»؟ اذكر رقم الطلب لأتحقق منه.")
+        if _order_status_intent(text) and not order:
+            prior = _previous_order_id(user_items[:-1])
+            if prior and _followup_status_intent(text):
+                return fake_response(calls=[tool_call("get_order_status", {"order_id": prior})])
+            return fake_response("اذكر رقم الطلب التجريبي لأتحقق من حالته.")
         if "شكوى" in text or "شكوة" in text:
             if not order:
                 return fake_response("اذكر رقم الطلب التجريبي ووصف المشكلة لأجهز شكوى للمراجعة.")
@@ -62,4 +70,44 @@ class DemoOpenAI(FakeOpenAI):
             return fake_response(calls=[tool_call("get_order_status", {"order_id": order[0].upper()})])
         if text.strip() in {"مرحبا", "مرحبًا", "مرحبا بك", "السلام عليكم"}:
             return fake_response("مرحبًا بك. أستطيع مساعدتك في الشحن والضمان والطلبات والشكاوى التجريبية.")
+        if _underspecified(text):
+            return fake_response("ما الذي تحتاج المساعدة فيه تحديدًا؟ يمكنك السؤال عن الشحن أو الضمان أو طلب تجريبي.")
         return fake_response(calls=[tool_call("search_faq", {"query": text[:1000]})])
+
+
+def _previous_order_id(items):
+    """Use only a customer-explicit earlier ID for a follow-up reference."""
+    for item in reversed(items):
+        if item.get("role") != "user" or not isinstance(item.get("content"),str):
+            continue
+        match=re.search(r"\bDEMO-\d{4}\b",item["content"],re.I)
+        if match:
+            return match.group(0).upper()
+        if _order_status_intent(item["content"]):
+            return None
+    return None
+
+
+def _order_status_intent(text):
+    normalized=text.casefold().replace("أ","ا").replace("إ","ا").replace("آ","ا")
+    return any(term in normalized for term in (
+        "حالة الطلب", "حاله الطلب", "حالة طلبي", "حاله طلبي", "وين طلبي", "اين طلبي",
+        "اين الطلب", "وين الطلب", "وصل طلبي", "وصل الطلب", "تسليم الطلب", "تم تسليمه",
+        "استلمت الطلب", "استلام الطلب", "طلبي وصل", "طلبي متى", "تتبع الطلب",
+    ))
+
+
+def _followup_status_intent(text):
+    normalized=text.casefold().replace("أ","ا").replace("إ","ا").replace("آ","ا")
+    return any(term in normalized for term in ("تم تسليمه", "وصل", "استلمه", "استلمت", "حالته", "حاله"))
+
+
+def _other_order_reference(text):
+    normalized=text.casefold().replace("أ","ا").replace("إ","ا").replace("آ","ا")
+    return any(term in normalized for term in ("طلبي الاخر", "الطلب الاخر", "طلب اخر", "طلبي الثاني"))
+
+
+def _underspecified(text):
+    normalized=" ".join(text.casefold().split())
+    exact={"اريد مساعدة", "أريد مساعدة", "مساعدة", "ساعدني", "ممكن تساعدني", "عندي استفسار", "عندي مشكلة"}
+    return normalized in exact or ("مساعدة" in normalized and len(normalized) < 36)

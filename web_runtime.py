@@ -5,37 +5,38 @@ private synthetic store. All functional operations use Agent -> actual MCP.
 """
 
 import asyncio
-from contextlib import AsyncExitStack, contextmanager
-from concurrent.futures import Future, TimeoutError as FutureTimeout
+import json
+import logging
+import math
+import os
+import re
+import secrets
+from concurrent.futures import Future
+from concurrent.futures import TimeoutError as FutureTimeout
+from contextlib import AsyncExitStack, closing, contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from decimal import Decimal
-import os
-from pathlib import Path
-from queue import Queue, Empty
-import re
-import secrets
-import logging
-import math
-import json
 from functools import wraps
+from pathlib import Path
+from queue import Empty, Queue
 from threading import Event, RLock, Thread
 from time import monotonic
 from uuid import uuid4
 
-from openai_transport import create_async_openai_client as AsyncOpenAI
-
 from agent import Agent
 from approval_store import issue_approval
 from audit_logger import AuditLogger
-from config import AgentConfig, ROOT
+from backup_manager import acquire_runtime_lease
+from config import AgentConfig
 from database import init_database, seed_demo_data
 from demo_client import DemoOpenAI
 from mcp_transport import TrustedSession, mcp_connection
+from openai_transport import create_async_openai_client as AsyncOpenAI
+from runtime_policy import public_demo_only, visitor_idle_timeout, worker_limit
 from security import validate_text
-from runtime_policy import public_demo_only, worker_limit, visitor_idle_timeout
+from session_store import DirectoryLease, SessionStore
 from web_controls import WebControls, WebError
-from session_store import SessionStore, DirectoryLease
 
 CUSTOMERS = {f"عميل تجريبي {i}": f"demo_customer_{i:03d}" for i in range(1, 6)}
 ERRORS = {
@@ -217,6 +218,8 @@ class VisitorSession:
     last_activity: float
     operations: int = 0
     conversation_ids: set = field(default_factory=set)
+    user_id: int | None = None
+    customer_id: str | None = None
 
 
 def visitor_operation(method):
@@ -238,13 +241,19 @@ class WebBackend:
         self._clock = clock or monotonic
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self._lease = DirectoryLease(self.directory)
+        self._maintenance_lease = acquire_runtime_lease()
+        try:
+            self._lease = DirectoryLease(self.directory)
+        except BaseException:
+            self._maintenance_lease.close()
+            raise
         self._closed = False
         try:
             self.journal = SessionStore(self.directory, clock=wall_clock)
             self.journal.recover_interrupted()
         except BaseException:
             self._lease.close()
+            self._maintenance_lease.close()
             raise
         self.controls = controls or WebControls(self.directory / "web_controls.sqlite3")
         self.bind_address = bind_address
@@ -252,6 +261,7 @@ class WebBackend:
         self._pending_conversations = 0
         self.lock = RLock()
         self._recovery_secrets = {}
+        self._revoked_visitors = set()
 
     def _expire_locked(self, now):
         """Caller holds registry lock. No conversation locks or worker joins."""
@@ -294,27 +304,36 @@ class WebBackend:
 
     @contextmanager
     def _visitor_operation(self, visitor):
+        pinned=False
         with self.lock:
             if self._closed:
                 raise WebError("session_lost")
             _, workers = self._expire_locked(self._clock())
             state = self.visitors.get(visitor)
-            if state is not None:
+            if state is not None and visitor not in self._revoked_visitors:
                 self.journal.touch(visitor, self.visitor_idle_seconds)
                 state.operations += 1
                 state.last_activity = self._clock()
+                pinned=True
         try:
             self._close_expired_workers(workers)
-            if state is None:
+            if state is None or visitor in self._revoked_visitors:
                 raise WebError("session_lost")
             yield
         finally:
-            if state is not None:
+            if pinned:
+                workers=[]
                 with self.lock:
                     state.operations -= 1
-                    # Idle time starts after completion, not request start.
-                    state.last_activity = self._clock()
-                    self.journal.touch(visitor, self.visitor_idle_seconds)
+                    if visitor in self._revoked_visitors:
+                        if state.operations==0 and self.visitors.get(visitor) is state:
+                            self.visitors.pop(visitor,None)
+                            workers=[self.conversations[c].worker for c in state.conversation_ids
+                                     if c in self.conversations and self.conversations[c].worker]
+                    else:
+                        state.last_activity = self._clock()
+                        self.journal.touch(visitor, self.visitor_idle_seconds)
+                self._close_expired_workers(workers)
 
     def _conversation_slots_locked(self):
         # Include valid owners not yet unlocked after restart; in-memory ownership
@@ -331,6 +350,67 @@ class WebBackend:
         visitor = self.new_visitor()
         with self.lock:
             return visitor, self._recovery_secrets.pop(visitor)
+
+    def create_account_session(self, principal):
+        """Create or restore an account-owned visitor using verified server identity."""
+        if principal.role != "customer" or principal.customer_id not in set(CUSTOMERS.values()):
+            raise WebError("session_lost")
+        label = next(label for label, customer_id in CUSTOMERS.items() if customer_id == principal.customer_id)
+        self.cleanup_expired_visitors()
+        with self.lock:
+            if self._closed:
+                raise WebError("session_lost")
+            records = self.journal.account_visitors(principal.user_id,principal.customer_id)
+            for owner, rows in records:
+                visitor=owner['id']
+                if visitor in self.visitors and visitor not in self._revoked_visitors:
+                    return visitor
+                if len(self.visitors) >= 64:
+                    break
+                restored={}
+                for row in rows:
+                    if (not re.fullmatch(r'[0-9a-f]{32}', row['id']) or row['customer'] != label
+                            or row['mode'] not in {'Demo','Live'}):
+                        raise WebError("session_lost")
+                    restored[row['id']]=Conversation(visitor,label,
+                        TrustedSession(principal.customer_id,row['session']),self.directory / row['id'],row['mode'],
+                        messages=json.loads(row['messages']),result=json.loads(row['result']) if row['result'] else None,
+                        active=bool(row['active']),current_task=row['current_task'])
+                self.conversations.update(restored)
+                self.visitors[visitor]=VisitorSession(self._clock(),conversation_ids=set(restored),
+                                                       user_id=principal.user_id,customer_id=principal.customer_id)
+                self.journal.touch(visitor,self.visitor_idle_seconds)
+                return visitor
+        visitor=secrets.token_hex(32)
+        secret=secrets.token_hex(32)
+        with self.lock:
+            if len(self.visitors)>=64:
+                raise WebError("busy")
+            state=VisitorSession(self._clock(),user_id=principal.user_id,customer_id=principal.customer_id)
+            self.journal.register(visitor,secret,self.visitor_idle_seconds,self.visitors,
+                                  user_id=principal.user_id,customer_id=principal.customer_id)
+            self.visitors[visitor]=state
+        return visitor
+
+    def logout_account(self, user_id):
+        with self.lock:
+            owned=[v for v,state in self.visitors.items() if state.user_id==user_id]
+            workers=[]
+            for visitor in owned:
+                state=self.visitors[visitor]
+                active_worker=any(getattr(con.worker,"processing",None) is not None and con.worker.processing.is_set()
+                                   for con in (self.conversations[c] for c in state.conversation_ids if c in self.conversations))
+                if state.operations==0 and not active_worker:
+                    self.visitors.pop(visitor,None)
+                    workers.extend(self.conversations[c].worker for c in state.conversation_ids
+                                   if c in self.conversations and self.conversations[c].worker)
+                else:
+                    self._revoked_visitors.add(visitor)
+            self.journal.revoke_account(user_id)
+        self._close_expired_workers(workers)
+
+    def restore_account(self, principal):
+        return self.create_account_session(principal)
 
     def restore_visitor(self, visitor, recovery_secret):
         """Unlock only this owner's snapshots; no worker, model, tool or grant."""
@@ -362,7 +442,15 @@ class WebBackend:
             return [{'id':row['id'],'customer_label':row['customer'],'mode':row['mode'],'active':bool(row['active'])} for row in rows]
 
     def live_allowed(self):
-        return (not public_demo_only()
+        enabled=False
+        try:
+            import sqlite3
+            with closing(sqlite3.connect(self.directory / "auth.sqlite3", timeout=1)) as db:
+                row=db.execute("SELECT value FROM system_settings WHERE name='live_enabled'").fetchone()
+                enabled=bool(row and row[0]=="1")
+        except Exception:
+            pass
+        return (enabled and not public_demo_only()
                 and os.environ.get("SMARTSUPPORT_ENABLE_LOCAL_LIVE") == "1"
                 and os.environ.get("SMARTSUPPORT_DEPLOYMENT", "public") == "local"
                 and self.bind_address in {"127.0.0.1", "::1"})
@@ -377,7 +465,7 @@ class WebBackend:
         except Exception:
             return False
 
-    def new_visitor(self):
+    def new_visitor(self, *, user_id=None, customer_id=None):
         state, workers = None, []
         try:
             with self.lock:
@@ -394,9 +482,10 @@ class WebBackend:
                         break
                 else:
                     raise WebError("busy")
-                state = VisitorSession(self._clock(), operations=1)
+                state = VisitorSession(self._clock(), operations=1,user_id=user_id,customer_id=customer_id)
                 secret = secrets.token_hex(32)
-                self.journal.register(visitor,secret,self.visitor_idle_seconds,self.visitors)
+                self.journal.register(visitor,secret,self.visitor_idle_seconds,self.visitors,
+                                      user_id=user_id,customer_id=customer_id)
                 self._recovery_secrets[visitor]=secret
                 self.visitors[visitor] = state
             return visitor
@@ -411,6 +500,9 @@ class WebBackend:
     def new_conversation(self, visitor, customer_label, mode="Demo", *, previous=None):
         with self.lock:
             if visitor not in self.visitors or customer_label not in CUSTOMERS or mode not in {"Demo", "Live"}:
+                raise WebError("session_lost")
+            state=self.visitors[visitor]
+            if state.customer_id is not None and CUSTOMERS[customer_label] != state.customer_id:
                 raise WebError("session_lost")
             if mode == "Live" and not self.live_allowed():
                 raise WebError("live_disabled")
@@ -598,3 +690,4 @@ class WebBackend:
         if any(getattr(con.worker,'processing',Event()).is_set() for con in conversations):
             raise WebError('busy')
         self._lease.close()
+        self._maintenance_lease.close()

@@ -15,7 +15,8 @@ toolbarMode = "viewer"
 
 [theme]
 font = "IBM Plex Sans Arabic, Tahoma, Arial, sans-serif"
-metricValueFontSize = "1.55rem"
+metricValueFontSize = "2rem"
+headingFontWeights = [600, 600, 600, 600, 600, 600]
 baseRadius = "0.9rem"
 buttonRadius = "0.65rem"
 showWidgetBorder = true
@@ -27,20 +28,21 @@ paddingBottom = "2rem"
 paddingTop = "1rem"
 
 [theme.light]
-primaryColor = "#6038E8"
-backgroundColor = "#F7F8FC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#20283D"
-borderColor = "#E5E8F1"
+primaryColor = "#087F8C"
+backgroundColor = "#FAFBFD"
+secondaryBackgroundColor = "#F1F5F9"
+textColor = "#102544"
+borderColor = "#E4EAF1"
+chartCategoricalColors = ["#12B6A6", "#1584BD", "#6654D9"]
 greenColor = "#16A573"
 orangeColor = "#F59E0B"
 
 [theme.light.sidebar]
-backgroundColor = "#111B38"
-secondaryBackgroundColor = "#1E2A4D"
-textColor = "#FFFFFF"
-borderColor = "#33405F"
-primaryColor = "#6038E8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F8FA"
+textColor = "#102544"
+borderColor = "#E4EAF1"
+primaryColor = "#087F8C"
 
 [theme.dark]
 primaryColor = "#6038E8"

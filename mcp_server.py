@@ -189,7 +189,6 @@ def build_server(context: DemoSession) -> Server:
     async def call_tool(name: str, arguments: dict[str, Any]) -> dict | CallToolResult:
         if name not in DEFINITIONS:
             return _error("UNKNOWN_TOOL", "Tool is not allowed")
-        permit = None
         try:
             model = DEFINITIONS[name][0].model_validate(arguments)
             args = model.model_dump()
@@ -238,6 +237,7 @@ async def run(context: DemoSession) -> None:
 
 
 def main() -> None:
+    from backup_manager import runtime_lease, BackupError
     parser = argparse.ArgumentParser(description="SmartSupport MCP stdio: LOCAL DEMO ONLY")
     parser.add_argument("--db", type=Path, default=database.DEFAULT_DB_PATH)
     parser.add_argument("--demo-customer-id", required=True)
@@ -246,12 +246,13 @@ def main() -> None:
     args = parser.parse_args()
     logging.basicConfig(stream=sys.stderr, level=logging.WARNING)
     try:
-        context = DemoSession(args.demo_customer_id, args.demo_session_id, args.db, args.approval_db)
-    except (ValueError, sqlite3.Error, OSError):
+        with runtime_lease():
+            context = DemoSession(args.demo_customer_id, args.demo_session_id, args.db, args.approval_db)
+            LOGGER.warning("Local demo identity only; not production authentication")
+            asyncio.run(run(context))
+    except (ValueError, sqlite3.Error, OSError, BackupError):
         LOGGER.error("Cannot start: check initialized database and local demo session")
         raise SystemExit(2)
-    LOGGER.warning("Local demo identity only; not production authentication")
-    asyncio.run(run(context))
 
 
 if __name__ == "__main__":

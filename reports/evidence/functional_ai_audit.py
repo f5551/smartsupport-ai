@@ -1,6 +1,7 @@
 """Offline acceptance audit. Existing DemoOpenAI, real runtime/MCP/SQLite; no paid calls."""
 from __future__ import annotations
 import json
+import secrets
 from contextlib import closing
 import os
 from pathlib import Path
@@ -17,6 +18,7 @@ os.environ["RUN_LIVE_OPENAI"] = "0"
 import web_runtime
 from web_runtime import WebBackend
 from web_controls import WebError
+from auth_store import AuthStore
 
 
 def forbidden_paid(**kwargs):
@@ -189,23 +191,29 @@ def run_case(spec):
 
 def full_restart_probe():
     with TemporaryDirectory(prefix="smartsupport-audit-restart-") as temporary:
+        auth=AuthStore(Path(temporary))
+        # Provision/login use one ephemeral password, never persisted or logged.
+        password=secrets.token_urlsafe(24)
+        auth.create_user("restart-customer",password,customer_id="demo_customer_001")
+        token,principal=auth.login("restart-customer",password)
         backend = WebBackend(Path(temporary))
-        visitor = backend.new_visitor(); identifier = backend.new_conversation(visitor, "عميل تجريبي 1")
+        visitor=backend.create_account_session(principal); identifier = backend.new_conversation(visitor, "عميل تجريبي 1")
         pending = backend.send(visitor, identifier, "احفظ هذا الملخص بعد موافقتي: ملخص اختبار استعادة الخدمة")
         backend.decide(visitor, identifier, pending["pending_approval"]["pending_id"], "approve")
         db = backend.conversations[identifier].directory / "store.sqlite3"
         backend.close()
         replacement = WebBackend(Path(temporary))
         try:
-            replacement.view(visitor, identifier)
-            result = "unexpectedly_recovered"
+            restored_visitor=replacement.restore_account(auth.authenticate(token))
+            view=replacement.view(restored_visitor, identifier)
+            result = "recovered" if restored_visitor==visitor and view["result"]["task_status"]=="completed" else "incomplete_recovery"
         except WebError as exc:
             result = exc.code
         finally:
             replacement.close()
-        return {"id":"B-RESTART", "expected_production_behavior":"Authenticated user can recover saved context after full application restart", "actual":"Old visitor/conversation mapping rejected: " + result,
-                "sqlite_memory_rows_retained":database_state(db)["memories"], "result":"Fail" if result == "session_lost" else "Pass",
-                "safe_failure":"No automatic unauthorized recovery; confidentiality preserved", "real_cost_usd":None}
+        return {"id":"B-RESTART", "expected_production_behavior":"Authenticated user can recover saved context after full application restart", "actual":"Authenticated account recovery: " + result,
+                "sqlite_memory_rows_retained":database_state(db)["memories"], "result":"Pass" if result == "recovered" else "Fail",
+                "safe_failure":"Recovery uses authenticated account principal; no task or MCP call is replayed", "real_cost_usd":None}
 
 
 def direct_no_grant_probe():

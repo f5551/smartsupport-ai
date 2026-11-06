@@ -2,11 +2,15 @@
 
 Uses a disposable Git index/config, so it also works before git init and honors
 the actual .gitignore. This pattern scan is not a guarantee of secret absence.
+PDF scanning requires pypdf (locally verified with 7.0.0) or working Poppler
+pdftotext on PATH. Missing extraction support or unreadable PDF text fails closed.
+Extracted text is scanned; this is not OCR or an embedded-file security audit.
 """
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -69,12 +73,66 @@ def secret_findings(text, relative_path):
     return findings
 
 
+class PDFScanError(RuntimeError):
+    """Safe diagnostic: never include extracted text or parser stderr."""
+
+
+def pdf_text(path):
+    # pypdf is a release-tool dependency, not an application/model dependency.
+    # If absent, retain support for a system Poppler installation.
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        PdfReader = None
+    if PdfReader is not None:
+        try:
+            with path.open("rb") as source:
+                reader = PdfReader(source, strict=True)
+                if reader.is_encrypted:
+                    raise PDFScanError("Encrypted PDF cannot be scanned without an explicit review")
+                pages = [page.extract_text() or "" for page in reader.pages]
+                if not pages or any(not page.strip() for page in pages):
+                    raise PDFScanError("PDF contains a page without extractable text; OCR or manual security review is required")
+                return "\n".join(pages)
+        except PDFScanError:
+            raise
+        except Exception:
+            raise PDFScanError("PDF text extraction failed: unreadable or damaged PDF") from None
+    executable = shutil.which("pdftotext")
+    if executable is None:
+        raise PDFScanError("PDF scanner unavailable: install pypdf or install Poppler pdftotext and add it to PATH")
+    try:
+        completed = subprocess.run(
+            [executable, "-enc", "UTF-8", "-layout", str(path.resolve()), "-"],
+            stdin=subprocess.DEVNULL, capture_output=True, timeout=20,
+        )
+    except (OSError, subprocess.SubprocessError):
+        raise PDFScanError("PDF text extraction could not complete") from None
+    if completed.returncode != 0:
+        raise PDFScanError("PDF text extraction failed: unreadable, damaged or encrypted PDF")
+    try:
+        text = completed.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        raise PDFScanError("PDF extractor returned invalid UTF-8") from None
+    if not text.strip():
+        raise PDFScanError("PDF has no extractable text; OCR or manual security review is required")
+    return text
+
+
 def check_release(root=ROOT):
     root = Path(root)
     files = distributable_files(root)
     findings = []
+    pdf_scanned = 0
     for relative in files:
         path = root / relative
+        if path.suffix.lower() == ".pdf":
+            try:
+                findings.extend(secret_findings(pdf_text(path), relative))
+                pdf_scanned += 1
+            except PDFScanError as error:
+                findings.append({"path": relative, "rule": "pdf_scan_failed", "message": str(error)})
+            continue
         # Binary artifacts are not searched as text; review them separately.
         if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".ico", ".ttf"}:
             continue
@@ -90,8 +148,8 @@ def check_release(root=ROOT):
                     or event.get("source") != "isolated_integration"
                     or any(k in event for k in ("content", "arguments", "api_key", "approval_id", "description"))):
                 findings.append({"path": relative, "line": number, "rule": "unsafe_trace"})
-    return {"files_scanned": len(files), "findings": findings,
-            "scope": "Git-distributable UTF-8 text, pattern scan; binary artifacts excluded"}
+    return {"files_scanned": len(files), "pdf_files_scanned": pdf_scanned, "findings": findings,
+            "scope": "Git-distributable UTF-8 and extracted PDF text, pattern scan; other binary artifacts excluded"}
 
 
 if __name__ == "__main__":

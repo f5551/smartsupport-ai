@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "checks": {
+    "one_ticket": true,
+    "owner_and_order": true,
+    "durable_result": true,
+    "one_mcp_write": true,
+    "final_answer": true,
+    "ticket_in_answer": true,
+    "usage_settled": true,
+    "turns_within_limit": true,
+    "budget": true
+  },
+  "ticket_id": "TKT-a67ed94ecf304e0a98ab2d332e3e082c",
+  "stop_reason": "final_answer",
+  "answer": "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062a\u0630\u0643\u0631\u0629 TKT-a67ed94ecf304e0a98ab2d332e3e082c.",
+  "input_tokens": 1341,
+  "output_tokens": 84,
+  "cost_usd": "0.00138375",
+  "generation_upper_bound_usd": "0.004614",
+  "count_requests": 2,
+  "generation_requests": 2,
+  "cached_tokens": 0
+}

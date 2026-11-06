@@ -7,7 +7,7 @@
       "provider": "OpenAI",
       "aliases": ["gpt-5.4-mini"],
       "source_url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
-      "verified_at": "2026-11-03",
+      "verified_at": "2026-11-04",
       "tiers": {"default": {"input": "0.75", "cached_input": "0.075", "output": "4.50"}}
     },
     "gpt-4.1-mini-2025-04-14": {

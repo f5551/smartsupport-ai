@@ -41,9 +41,9 @@ class FakeMCP:
         return SimpleNamespace(isError=not payload["ok"], structuredContent=deepcopy(payload))
 
 
-def run(script, *, mcp=None, config=None, message="مرحبًا"):
+def run(script, *, mcp=None, config=None, message="مرحبًا", audit=None):
     client, mcp = FakeOpenAI(script), mcp or FakeMCP()
-    agent = Agent(client, mcp, CONTEXT, config or settings())
+    agent = Agent(client, mcp, CONTEXT, config or settings(), audit=audit)
     return asyncio.run(agent.run(message)), client, mcp
 
 
@@ -169,6 +169,23 @@ def test_api_errors_do_not_leak_details_or_retry_ambiguous_failures(error):
     assert "sensitive" not in result.message
 
 
+def test_openai_error_audit_records_safe_type_and_phase(tmp_path):
+    from audit_logger import AuditLogger
+    secret = "credential-placeholder-that-must-not-be-logged"
+    error = APIConnectionError(request=httpx.Request("POST", "https://api.openai.com/v1/responses"))
+    audit = AuditLogger(tmp_path / "events.jsonl", source="unit_test")
+    result, client, _ = run([error], audit=audit, message=secret)
+    assert result.stop_reason == "openai_error"
+    events = [event for event in audit.events if event["event_type"] == "model_error"]
+    assert len(events) == 1
+    assert events[0]["error_type"] == "APIConnectionError"
+    assert events[0]["error_phase"] == "responses_create"
+    raw = (tmp_path / "events.jsonl").read_text(encoding="utf-8")
+    assert secret not in raw
+    assert "api.openai.com" not in raw
+    assert len(client.requests) == 1
+
+
 def test_rate_limit_retries_are_bounded_and_count_as_turns():
     error = RateLimitError("limited", response=httpx.Response(429, request=httpx.Request("POST", "https://api.openai.com/v1/responses")), body=None)
     result, client, _ = run([error, error, fake_response("must not run")])
@@ -279,3 +296,86 @@ def test_mcp_error_result_is_returned_to_model_as_failure():
                              fake_response("تعذر الاطلاع على الطلب")], mcp=mcp)
     assert result.stop_reason == "final_answer"
     assert json.loads(outputs(client.requests[1])[0]["output"])["result"]["ok"] is False
+
+
+def test_final_order_status_is_overridden_by_authoritative_mcp_result():
+    mcp=FakeMCP(payload={"ok":True,"data":{"order_id":"DEMO-1001","status":"shipped"},"error":None})
+    result,_,_=run([fake_response(calls=[tool_call("get_order_status",{"order_id":"DEMO-1001"})]),
+                    fake_response("تم التسليم ووصل الطلب")],mcp=mcp,message="ما حالة الطلب DEMO-1001؟")
+    assert result.message=="الطلب DEMO-1001؛ الحالة: قيد الشحن."
+    assert "تم التسليم" not in result.message
+
+
+@pytest.mark.parametrize("payload,expected",[
+    ({"ok":False,"data":None,"error":{"code":"ACCESS_DENIED","message":"unavailable"}},"غير متاحة أو غير مصرح بها"),
+    ({"ok":True,"data":{"order_id":"DEMO-9999","status":"delivered"},"error":None},"لم يتطابق معرّف نتيجة"),
+    ({"ok":True,"data":{"order_id":"DEMO-1001","status":"waiting_for_dragon"},"error":None},"حالة غير معروفة"),
+])
+def test_order_status_denial_mismatch_or_unknown_never_uses_model_guess(payload,expected):
+    result,_,_=run([fake_response(calls=[tool_call("get_order_status",{"order_id":"DEMO-1001"})]),
+                    fake_response("تم التسليم بالتأكيد")],mcp=FakeMCP(payload=payload),message="ما حالة الطلب DEMO-1001؟")
+    assert expected in result.message and "تم التسليم بالتأكيد" not in result.message
+
+
+def test_ticket_status_final_answer_uses_exact_tool_status():
+    payload={"ok":True,"data":{"ticket_id":"DEMO-TKT-001","status":"open"},"error":None}
+    result,_,_=run([fake_response(calls=[tool_call("get_ticket_status",{"ticket_id":"DEMO-TKT-001"})]),
+                    fake_response("أُغلقت التذكرة")],mcp=FakeMCP(payload=payload),message="ما حالة التذكرة DEMO-TKT-001؟")
+    assert result.message=="التذكرة DEMO-TKT-001؛ الحالة: مفتوحة."
+    assert "أُغلقت" not in result.message
+
+
+@pytest.mark.parametrize("question,invented", [
+    ("ما حالة الطلب DEMO-1001؟", "الطلب DEMO-1001 تم تسليمه اليوم ورقم الشحنة SHIP-FAKE."),
+    ("أنشئ تذكرة للطلب DEMO-1002", "تم إنشاء التذكرة TKT-fabricated بنجاح."),
+    ("كم تستغرق مدة الشحن؟", "مدة الشحن 99 يومًا مع ضمان الوصول غدًا."),
+])
+def test_final_store_claim_requires_current_task_mcp_evidence(question, invented):
+    result, client, mcp = run([fake_response(invented)], message=question,
+                             config=settings())
+    assert result.stop_reason == "final_answer"
+    assert "لم تتوفر نتيجة موثقة" in result.message
+    assert invented not in result.message
+    assert not mcp.calls and not result.write_receipts
+    assert len(client.requests) == 1
+
+
+@pytest.mark.parametrize("question", ["مرحبًا", "كيف تساعدني؟", "أي معلومات تحتاج لمتابعة طلبي؟"])
+def test_direct_greeting_help_and_clarification_need_no_tool(question):
+    result, client, mcp = run([fake_response("مرحبًا، ما رقم الطلب؟")], message=question)
+    assert result.stop_reason == "final_answer"
+    assert "أستطيع مساعدتك" in result.message and "توضيح" in result.message
+    assert not mcp.calls and len(client.requests) == 1
+
+
+def test_faq_evidence_does_not_authorize_model_ticket_claim():
+    mcp = FakeMCP(payload={"ok": True, "data": [{"id": "FAQ-001", "answer": "الشحن من 2 إلى 5 أيام عمل."}], "error": None})
+    result, _, _ = run([
+        fake_response(calls=[tool_call("search_faq", {"query": "الشحن"})]),
+        fake_response("تم إنشاء التذكرة TKT-invented؛ الشحن يستغرق 99 يومًا."),
+    ], mcp=mcp, message="ما مدة الشحن؟ وهل أنشئت التذكرة؟")
+    assert "2 إلى 5" in result.message and "FAQ-001" in result.message
+    assert "TKT-invented" not in result.message and "99" not in result.message
+    assert not result.write_receipts
+
+
+@pytest.mark.parametrize("payload", [
+    {"ok": False, "data": None, "error": {"code": "APPROVAL_REQUIRED"}},
+    {"ok": True, "data": None, "error": None},
+    {"ok": True, "data": {"ticket_id": ""}, "error": None},
+])
+def test_failed_or_incomplete_write_receipt_cannot_confirm_success(payload):
+    client = FakeOpenAI([
+        fake_response(calls=[tool_call("create_ticket", {"order_id": "DEMO-1002", "description": "اختبار"})]),
+        fake_response("تم إنشاء التذكرة TKT-invented بنجاح."),
+    ])
+    agent = Agent(client, FakeMCP(payload=payload), CONTEXT, settings())
+
+    async def scenario():
+        pending = await agent.run("أنشئ تذكرة تجريبية")
+        result = await agent.resume(pending.task_id, pending.pending_approval["pending_id"],
+                                    decision="approve", approval_id="synthetic-test-reference")
+        assert "تم إنشاء التذكرة" not in result.message
+        assert "TKT-invented" not in result.message
+        assert "تأكيد" in result.message
+    asyncio.run(scenario())

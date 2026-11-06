@@ -28,6 +28,11 @@ CODES = {"INVALID_INPUT", "ACCESS_DENIED", "APPROVAL_REQUIRED", "STORAGE_ERROR",
          "MCP_TRANSPORT_ERROR", "BUDGET_LIMIT", "USAGE_UNAVAILABLE", "PRICE_UNAVAILABLE", "MODEL_PRICE_MISMATCH",
          "TIER_PRICE_MISMATCH", "UNPRICED_CACHE_WRITE", "CACHE_USAGE_UNAVAILABLE", "AUDIT_UNAVAILABLE"}
 CODES.update({"MAX_TOOL_CALLS", "DUPLICATE_TOOL_CALL", "INPUT_TOKEN_LIMIT", "DAILY_BUDGET_LIMIT", "BUDGET_STORAGE_ERROR"})
+ERROR_PHASES = {"client_create", "responses_create", "response_usage", "mcp_call", "audit_write", "unknown"}
+ERROR_TYPES = {
+    "APIConnectionError", "APITimeoutError", "AuthenticationError", "RateLimitError",
+    "APIStatusError", "BadRequestError", "APIError", "TimeoutError", "OSError", "UnknownError",
+}
 
 
 class AuditError(OSError):
@@ -70,6 +75,8 @@ class AuditLogger:
                  "cost_usd": _amount(fields.get("cost_usd")),
                  "stop_reason": fields.get("stop_reason") if fields.get("stop_reason") in REASONS else None,
                  "error_code": fields.get("error_code") if fields.get("error_code") in CODES else None,
+                 "error_type": fields.get("error_type") if fields.get("error_type") in ERROR_TYPES else None,
+                 "error_phase": fields.get("error_phase") if fields.get("error_phase") in ERROR_PHASES else None,
                  "usage_source": fields.get("usage_source") if fields.get("usage_source") in {"api", "simulation", "unverified"} else "unverified",
                  "cost_kind": fields.get("cost_kind") if fields.get("cost_kind") in {"api_usage", "simulated_usage", "unverified_usage", "estimate", "unknown"} else "unknown",
                  "source": self.source, "scenario": self.scenario, "fault_source": self.fault_source}

@@ -13,16 +13,16 @@ STOP_LABELS = {"final_answer": "اكتملت الإجابة", "pending_approval"
 def header(mode, customer, mcp_status):
     with st.container(key="brand"):
         st.title("SmartSupport AI", icon=":material/support_agent:", anchor=False, text_alignment="right")
-        st.caption("متجر الإلكترونيات · مساعد خدمة العملاء الذكي · جلسة خاصة في هذا المتصفح", text_alignment="right")
+        st.caption("متجر الإلكترونيات · مساعد خدمة العملاء الذكي · مساحة خاصة بحسابك", text_alignment="right")
         with st.container(horizontal=True, horizontal_alignment="left", vertical_alignment="center"):
-            st.badge("Demo • محاكاة" if mode == "Demo" else "Live • محلي", color="blue", icon=":material/science:")
+            st.badge("محاكاة آمنة" if mode == "Demo" else "تشغيل مباشر محلي", color="blue", icon=":material/science:")
             statuses = {"verified": ("MCP • تم التحقق", "green"), "error": ("MCP • تعذر الاتصال", "red"),
                         "archived": ("MCP • محادثة مؤرشفة", "gray")}
             label, color = statuses.get(mcp_status, ("MCP • لم يُتحقق بعد", "gray"))
             st.badge(label, color=color, icon=":material/hub:")
             st.badge(customer, color="gray", icon=":material/person:")
-    st.caption("Demo يستخدم بيانات محاكاة للنموذج، وMCP فعليًا لبيانات متجر اصطناعي. لا توجد تكلفة API."
-               if mode == "Demo" else "Live محلي: تُرسل الرسائل إلى OpenAI وقد تترتب تكلفة. لا ترسل بيانات حساسة.", text_alignment="right")
+    st.caption("وضع المحاكاة يستخدم MCP فعليًا وبيانات متجر اصطناعي؛ لا توجد تكلفة OpenAI."
+               if mode == "Demo" else "تشغيل مباشر محلي: تُرسل الرسائل إلى OpenAI وقد تترتب تكلفة. لا ترسل بيانات حساسة.", text_alignment="right")
 
 
 def suggestions(customer_index):
@@ -55,7 +55,7 @@ def chat(messages, *, copy_answer=False, result=None):
         for message in messages:
             role = message["role"]
             with st.chat_message(role, avatar=":material/support_agent:" if role == "assistant" else ":material/person:"):
-                st.caption("SmartSupport" if role == "assistant" else "أنت", text_alignment="right")
+                st.caption("رد الوكيل الذكي" if role == "assistant" else "أنت", text_alignment="right")
                 st.text(redact(message["content"]), text_alignment="right", width="stretch")
         latest = next((m["content"] for m in reversed(messages) if m["role"] == "assistant"), None)
         if latest and result and result.get("stop_reason") == "final_answer":
@@ -155,18 +155,24 @@ def budget_panel(result):
 
 def approval(pending):
     with st.container(border=True, key="approval_card"):
-        st.badge("بانتظار موافقتك", icon=":material/lock:", color="orange")
-        st.subheader("راجع العملية قبل تأكيدها", anchor=False, text_alignment="right")
+        st.badge("بانتظار موافقتك", icon=":material/schedule:", color="violet")
+        st.subheader("موافقة إنشاء تذكرة" if pending["tool"] == "create_ticket" else "موافقة حفظ الذاكرة", anchor=False, text_alignment="right")
         st.caption("لم تُنفذ هذه العملية بعد. التأكيد يخص هذا المحتوى وهذه المحادثة فقط.", text_alignment="right")
         details = pending["arguments"]
         if pending["tool"] == "create_ticket":
-            st.text("الطلب: " + details["order_id"], text_alignment="right")
-            st.text("وصف الشكوى: " + redact(details["description"]), text_alignment="right")
+            with st.container(border=True):
+                st.markdown(":material/person: **ملخص طلب العميل**")
+                st.text("وصف الشكوى: " + redact(details["description"]), text_alignment="right")
+            with st.container(border=True):
+                st.markdown(":material/description: **معاينة التذكرة**")
+                st.text("الطلب: " + details["order_id"], text_alignment="right")
+                st.caption("طلب دعم مرتبط بطلبك · لا توجد تذكرة جديدة قبل التأكيد")
             label = "تأكيد إنشاء الشكوى"
         else:
             st.text("الملخص المراد حفظه: " + redact(details["content"]), text_alignment="right")
             label = "تأكيد حفظ الذاكرة"
-        with st.container(horizontal=True, horizontal_alignment="left"):
+        st.info("لن تُنفذ العملية قبل موافقتك. يمكنك إلغاء الطلب دون أي كتابة.", icon=":material/verified_user:")
+        with st.container(horizontal=True, horizontal_alignment="right"):
             yes = st.button(label, key="approve_" + pending["pending_id"], type="primary", icon=":material/check:", wrap=True)
             no = st.button("إلغاء العملية", key="reject_" + pending["pending_id"], icon=":material/close:")
         return "approve" if yes else "reject" if no else None

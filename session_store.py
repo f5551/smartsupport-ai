@@ -1,8 +1,9 @@
-"""Private UI journal, not a store/MCP database or production authentication.
+"""Private UI journal, not a store/MCP database or production identity provider.
 
-Only a server-issued, independent 256-bit recovery secret can unlock persisted
-ownership. Task snapshots are display records, never executable continuations.
-One OS-locked backend owns a directory; SQLite transactions serialize its threads.
+Authenticated application recovery is bound to user_id/customer_id. Legacy
+anonymous recovery remains an internal compatibility path and is not exposed in
+the customer UI. Task snapshots are never executable continuations. One OS-locked
+backend owns a directory; SQLite transactions serialize its threads.
 """
 from contextlib import contextmanager
 import hashlib
@@ -73,7 +74,8 @@ class SessionStore:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS visitors (
                   id TEXT PRIMARY KEY, secret_hash TEXT NOT NULL,
-                  touched REAL NOT NULL, expires REAL NOT NULL, revoked INTEGER NOT NULL DEFAULT 0);
+                  touched REAL NOT NULL, expires REAL NOT NULL, revoked INTEGER NOT NULL DEFAULT 0,
+                  user_id INTEGER, customer_id TEXT);
                 CREATE TABLE IF NOT EXISTS conversations (
                   id TEXT PRIMARY KEY, visitor TEXT NOT NULL REFERENCES visitors(id),
                   customer TEXT NOT NULL, session TEXT NOT NULL, mode TEXT NOT NULL,
@@ -87,6 +89,11 @@ class SessionStore:
                 CREATE TABLE IF NOT EXISTS write_attempts (
                   fingerprint TEXT PRIMARY KEY, task TEXT NOT NULL REFERENCES tasks(id), created REAL NOT NULL);
             """)
+            columns={r["name"] for r in db.execute("PRAGMA table_info(visitors)")}
+            if "user_id" not in columns:
+                db.execute("ALTER TABLE visitors ADD COLUMN user_id INTEGER")
+            if "customer_id" not in columns:
+                db.execute("ALTER TABLE visitors ADD COLUMN customer_id TEXT")
 
     @contextmanager
     def connection(self):
@@ -104,19 +111,37 @@ class SessionStore:
         finally:
             db.close()
 
-    def register(self, visitor, secret, ttl, protected=()):
+    def register(self, visitor, secret, ttl, protected=(), *, user_id=None, customer_id=None):
         now = self.clock()
         with self.connection() as db:
             rows=db.execute("SELECT id FROM visitors WHERE expires<=? OR touched>?",(now,now)).fetchall()
             db.executemany("UPDATE visitors SET revoked=1 WHERE id=?", ((r['id'],) for r in rows if r['id'] not in protected))
             if db.execute("SELECT count(*) FROM visitors WHERE revoked=0").fetchone()[0] >= 64:
                 raise WebError("busy")
-            db.execute("INSERT INTO visitors VALUES(?,?,?,?,0)",
-                       (visitor, hashlib.sha256(secret.encode()).hexdigest(), now, now+ttl))
+            db.execute("INSERT INTO visitors(id,secret_hash,touched,expires,revoked,user_id,customer_id) VALUES(?,?,?,?,0,?,?)",
+                       (visitor, hashlib.sha256(secret.encode()).hexdigest(), now, now+ttl,user_id,customer_id))
+
+    def account_visitors(self, user_id, customer_id):
+        """Load only unexpired sessions already bound to this authenticated account."""
+        now=self.clock()
+        with self.connection() as db:
+            db.execute("UPDATE visitors SET revoked=1 WHERE revoked=0 AND (expires<=? OR touched>?)",(now,now))
+            visitors=db.execute("SELECT * FROM visitors WHERE user_id=? AND customer_id=? AND revoked=0 ORDER BY touched DESC",
+                                (user_id,customer_id)).fetchall()
+            return [(dict(v),[dict(r) for r in db.execute("SELECT * FROM conversations WHERE visitor=? ORDER BY rowid",(v['id'],))]) for v in visitors]
+
+    def latest_active_conversation(self, visitor):
+        with self.connection() as db:
+            row=db.execute("SELECT id FROM conversations WHERE visitor=? AND active=1 ORDER BY rowid DESC LIMIT 1",(visitor,)).fetchone()
+            return row["id"] if row else None
 
     def revoke(self, visitors):
         with self.connection() as db:
             db.executemany("UPDATE visitors SET revoked=1 WHERE id=?", ((v,) for v in visitors))
+
+    def revoke_account(self, user_id):
+        with self.connection() as db:
+            db.execute("UPDATE visitors SET revoked=1 WHERE user_id=?",(user_id,))
 
     def expire_unloaded(self, protected):
         now=self.clock()

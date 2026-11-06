@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="10.649" timestamp="2026-11-05T19:03:58.104241+03:00" hostname="DESKTOP-6JR3SR3"><testcase classname="tests.test_agent_live" name="test_real_openai_with_real_mcp_opt_in_only" time="10.576" /></testsuite></testsuites>

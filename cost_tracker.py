@@ -9,6 +9,7 @@ from datetime import date
 from decimal import Decimal
 import json
 from pathlib import Path
+from typing import Any
 
 MILLION = Decimal(1_000_000)
 DEFAULT_PRICING = Path(__file__).resolve().parent / "pricing.json"
@@ -109,8 +110,8 @@ class CostTracker:
         if source not in {"api", "simulation", "unverified"}:
             raise ValueError("Invalid usage source")
         self.price, self.source = price, source
-        self.records = []
-        self.reservations = {}
+        self.records: list[dict[str, Any]] = []
+        self.reservations: dict[str, Decimal] = {}
         self.input_tokens = self.output_tokens = 0
 
     @property

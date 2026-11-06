@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "checks": {
+    "expected_mcp": true,
+    "exact_pending_before_write": true,
+    "zero_write_before_approval": true,
+    "one_ticket": true,
+    "durable_result": true,
+    "ticket_in_answer": true,
+    "idempotent_replay": true,
+    "final_answer": true,
+    "settled_usage": true,
+    "within_turns": true,
+    "within_budget": true
+  },
+  "stop_reason": "final_answer",
+  "answer": "تم إنشاء التذكرة بنجاح.\n\nرقم التذكرة: TKT-e1ba706b2e0440ce849058871114ac6d\nالحالة: open",
+  "tools": [
+    "create_ticket"
+  ],
+  "input_tokens": 1664,
+  "output_tokens": 80,
+  "cached_tokens": 0,
+  "cost_usd": "0.00160800",
+  "known_cost_usd": "0.00160800",
+  "generation_requests": 2,
+  "count_requests": 2,
+  "provider_usage": [
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 763,
+      "input_tokens": 763,
+      "output_tokens": 37,
+      "cached_tokens": 0,
+      "cost_usd": "0.00073875",
+      "reserved_upper_usd": "0.00100425"
+    },
+    {
+      "model": "gpt-5.4-mini-2026-03-17",
+      "service_tier": "default",
+      "server_count": 901,
+      "input_tokens": 901,
+      "output_tokens": 43,
+      "cached_tokens": 0,
+      "cost_usd": "0.00086925",
+      "reserved_upper_usd": "0.00110775"
+    }
+  ],
+  "errors": [],
+  "usage_complete": true,
+  "audit_events": 11
+}

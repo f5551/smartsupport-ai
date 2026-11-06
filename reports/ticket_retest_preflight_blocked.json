@@ -1,0 +1,29 @@
+{
+  "status": "BLOCKED",
+  "stage": "budget_preflight",
+  "reason": "Strict USD 0.005 spend guarantee cannot be established from the current local input-token estimates. Per-request usage is checked after the paid response.",
+  "authorized_task_budget_usd": "0.005",
+  "estimated_two_request_cost_usd": "0.004614",
+  "api_requests": 0,
+  "mcp_write_calls": 0,
+  "new_tickets": 0,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "cached_tokens": 0,
+  "cost_usd_this_attempt": "0",
+  "prior_unknown_reservation_usd": "0.002445",
+  "prior_unknown_unchanged": true,
+  "verification": {
+    "one_new_ticket": "NOT_RUN",
+    "durable_result": "NOT_RUN",
+    "final_answer_with_ticket_id": "NOT_RUN",
+    "internal_data_disclosure": "No response or internal result was produced",
+    "max_turns": "No model turns executed"
+  },
+  "evidence": [
+    "ticket_retest.execute uses CostTracker.estimate for budget admission",
+    "Agent._reservation relies on estimate_input before sending the request",
+    "Agent._request passes max_output_tokens but checks actual input_tokens only after receiving the response",
+    "Read-only ledger query confirmed one unknown row with reserved=2445000000 and actual=NULL (scale 10^12)"
+  ]
+}
