@@ -1,8 +1,11 @@
+.dockerignore
 .env.example
+.gitattributes
 .github/workflows/linux-preflight.yml
 .gitignore
 .python-version
 .streamlit/config.toml
+Dockerfile
 LICENSE
 README.md
 agent.py
@@ -41,8 +44,14 @@ data/faq.json
 data/seed_orders.json
 database.py
 demo_client.py
-deployment_readiness.md
+docs/fly_demo.md
+docs/history/deployment_readiness.md
+docs/history/readme_before_documentation_cleanup.md
+docs/history/saas_ui_review.md
+docs/history/ui_review.md
+docs/operations.md
 fake_openai.py
+fly.toml
 generate_traces.py
 knowledge_base.py
 live_acceptance_runner.py
@@ -164,7 +173,6 @@ reports/ui_reference_redesign.md
 reports/ui_responsive_verification.md
 requirements.txt
 runtime_policy.py
-saas_ui_review.md
 security.py
 session_store.py
 tests/.gitkeep
@@ -214,7 +222,6 @@ ui/__init__.py
 ui/components.py
 ui/pages.py
 ui/styles.py
-ui_review.md
 web_controls.py
 web_runtime.py
 web_ui.py

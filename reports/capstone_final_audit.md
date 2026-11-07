@@ -20,7 +20,7 @@
 | العنصر | الحالة | الدليل/الملاحظة |
 | --- | --- | --- |
 | مستودع GitHub عام | ناقص | لا يوجد مجلد `.git` أو remote محلي. README ما زال يعرض أوامر ورابط حساب بديل، لا رابط مستودع منشور. |
-| رابط تجربة حي | ناقص | `deployment_readiness.md` يؤكد عدم وجود رابط عام مختبر؛ لا رابط Render أو Railway في الملفات. |
+| رابط تجربة حي | ناقص | [تقرير الجاهزية التاريخي](../docs/history/deployment_readiness.md) يؤكد عدم وجود رابط عام مختبر؛ لا رابط Render أو Railway في الملفات. |
 | `success_1.jsonl` | مكتمل | موجود في `traces/`؛ أحداثه موسومة `usage_source=simulation` و`source=isolated_integration`. |
 | `near_failure_recovery.jsonl` | مكتمل | موجود وموسوم كمحاكاة؛ يتضمن رفض ملكية ثم تعافيًا. |
 | `explicit_failure.jsonl` | مكتمل | موجود وموسوم كمحاكاة؛ الفشل المحفوظ ناتج عن عطل نقل MCP محقون، وليس فشل API حقيقيًا. |

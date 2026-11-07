@@ -1,3 +1,5 @@
+> **تقرير تاريخي محفوظ دون تغيير نتائج الاختبارات.** الحالة والتعليمات الحالية في [README](../../README.md) و[دليل Fly.io](../fly_demo.md).
+
 # SmartSupport AI — تقرير واجهة SaaS 3.0
 
 تنفيذ محلي بتاريخ 2026-11-03. الواجهة تهيأت لعرض تجاري، مع بقاء النظام عرضًا ببيانات اصطناعية، دون نشر أو API مدفوع. صورة المرجع لم تكن موجودة ضمن المرفقات المتاحة؛ استُخدمت لوحة الألوان والتخطيط الواردان نصيًا في الطلب.
@@ -62,9 +64,9 @@ CSS يستهدف مفاتيح مكوناتنا والعناصر الدلالية
 
 المقاسات اختُبرت بمحاكاة viewport في Chrome، وليس على جهاز هاتف فعلي. الألوان وضوحها فُحص بصريًا، وتباين الزر الأساسي محكوم أيضًا باختبار 4.5:1. لا ندعي تدقيق وصول شاملًا أو اختبار جميع قارئات الشاشة والمتصفحات.
 
-![المحادثة والنشاط](artifacts/saas-desktop.jpg)
+![المحادثة والنشاط](../../artifacts/saas-desktop.jpg)
 
-[حالة البداية](artifacts/saas-desktop-empty.jpg) · [الميزانية](artifacts/saas-budget.jpg) · [اللوحي](artifacts/saas-tablet.jpg) · [الهاتف](artifacts/saas-mobile.jpg) · [الموافقة](artifacts/saas-approval-mobile.jpg) · [الداكن والرفض](artifacts/saas-dark.jpg)
+[حالة البداية](../../artifacts/saas-desktop-empty.jpg) · [الميزانية](../../artifacts/saas-budget.jpg) · [اللوحي](../../artifacts/saas-tablet.jpg) · [الهاتف](../../artifacts/saas-mobile.jpg) · [الموافقة](../../artifacts/saas-approval-mobile.jpg) · [الداكن والرفض](../../artifacts/saas-dark.jpg)
 
 ## القيود والتشغيل
 
